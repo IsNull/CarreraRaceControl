@@ -1,8 +1,8 @@
-#define PWM_PIN_DRIVER1 11
-#define PWM_PIN_DRIVER2 6
+#define PWM_PIN_DRIVER1 6
+#define PWM_PIN_DRIVER2 10
 
-#define INPUT_FAULT_DRIVER1 9
-#define INPUT_FAULT_DRIVER2 4
+#define INPUT_FAULT_DRIVER1 11
+#define INPUT_FAULT_DRIVER2 7
 
 
 /*
@@ -77,14 +77,14 @@ void checkForDriverFaults()
 {
   boolean hasFault;
 
-  hasFault = (digitalRead(INPUT_FAULT_DRIVER1) == HIGH);
+  hasFault = (digitalRead(INPUT_FAULT_DRIVER1) == HIGH) && false;
   if (carStates.faultCar1 != hasFault)
   {
     carStates.faultCar1 = hasFault;
     carStates.faultCar1Reported = false;
   }
 
-  hasFault = (digitalRead(INPUT_FAULT_DRIVER2) == HIGH);
+  hasFault = (digitalRead(INPUT_FAULT_DRIVER2) == HIGH) && false;
   if (carStates.faultCar2 != hasFault)
   {
     carStates.faultCar2 = hasFault;
@@ -138,12 +138,18 @@ void interpretCommand()
       long percentage = extractValueAfterAddress(ADDRESS_CAR1);
 
       carStates.speedCar1 = (255 * percentage) / 100;
+
+      Serial.print("I: Car 1 requested power %: ");
+      Serial.println(percentage);
     }
     else if (serialCommand.startsWith(ADDRESS_CAR2))
     {
       long percentage = extractValueAfterAddress(ADDRESS_CAR2);
 
       carStates.speedCar2 = (255 * percentage) / 100;
+
+      Serial.print("I: Car 2 requested power %: ");
+      Serial.println(percentage);
     }
     else
     {
