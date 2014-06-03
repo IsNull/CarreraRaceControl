@@ -204,7 +204,7 @@ boolean output_errors = false;  // true or false
 // It is not necessary to set this! It just makes life easier when writing code for
 // the receiving side. The Processing test sketch also works without setting this.
 // NOTE: When using this, OUTPUT__STARTUP_STREAM_ON has no effect!
-#define OUTPUT__HAS_RN_BLUETOOTH false  // true or false
+#define OUTPUT__HAS_RN_BLUETOOTH true  // true or false
 
 
 // SENSOR CALIBRATION
