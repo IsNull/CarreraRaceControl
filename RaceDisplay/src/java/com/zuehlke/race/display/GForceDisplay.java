@@ -31,58 +31,7 @@ public class GForceDisplay extends PApplet {
     private Float[] gyr;
     private Float[] mag;
 
-    void drawArrow(float headWidthFactor, float headLengthFactor) {
-        float headWidth = headWidthFactor * 200.0f;
-        float headLength = headLengthFactor * 200.0f;
 
-        pushMatrix();
-
-        // Draw base
-        translate(0, 0, -100);
-        box(100, 100, 200);
-
-        // Draw pointer
-        translate(-headWidth/2, -50, -100);
-        beginShape(QUAD_STRIP);
-        vertex(0, 0 ,0);
-        vertex(0, 100, 0);
-        vertex(headWidth, 0 ,0);
-        vertex(headWidth, 100, 0);
-        vertex(headWidth/2, 0, -headLength);
-        vertex(headWidth/2, 100, -headLength);
-        vertex(0, 0 ,0);
-        vertex(0, 100, 0);
-        endShape();
-        beginShape(TRIANGLES);
-        vertex(0, 0, 0);
-        vertex(headWidth, 0, 0);
-        vertex(headWidth/2, 0, -headLength);
-        vertex(0, 100, 0);
-        vertex(headWidth, 100, 0);
-        vertex(headWidth/2, 100, -headLength);
-        endShape();
-
-        popMatrix();
-    }
-
-    void drawBoard() {
-        pushMatrix();
-
-
-        // Board body
-        fill(255, 0, 0);
-        box(250, 20, 400);
-
-        // Forward-arrow
-        pushMatrix();
-        translate(0, 0, -200);
-        scale(0.5f, 0.2f, 0.25f);
-        fill(0, 255, 0);
-        drawArrow(1.0f, 2.0f);
-        popMatrix();
-
-        popMatrix();
-    }
 
     // Skip incoming serial stream data until token is found
     boolean readToken(Serial serial, String token) {
@@ -167,16 +116,14 @@ public class GForceDisplay extends PApplet {
 
         // Draw board
         pushMatrix();
-        translate(width/2, height/2, -350);
-        drawBoard();
+        fill(0,255,0);
+        rect(400,acc[0]>0?400:400-abs(acc[0]),50,50+abs(acc[0]));
+        rect(acc[1]<0?400:400-abs(acc[1]),400,50+abs(acc[1]),50);
         popMatrix();
 
         textFont(font, 20);
         fill(255);
         textAlign(LEFT);
-
-        // Output info text
-        text("Point FTDI connector towards screen and press 'a' to align", 10, 25);
 
         // Output angles
         pushMatrix();
