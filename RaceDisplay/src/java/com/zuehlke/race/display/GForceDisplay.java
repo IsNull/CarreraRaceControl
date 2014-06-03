@@ -4,6 +4,8 @@ import processing.core.PApplet;
 import processing.core.PFont;
 import processing.serial.*;
 
+import java.text.DecimalFormat;
+
 /******************************************************************************************
  * Based on Test Sketch for Razor AHRS v1.4.2
  * https://github.com/ptrbrtz/razor-9dof-ahrs
@@ -21,15 +23,13 @@ public class GForceDisplay extends PApplet {
 
     final static int SERIAL_PORT_BAUD_RATE = 57600;
 
-    float yaw = 0.0f;
-    float pitch = 0.0f;
-    float roll = 0.0f;
-    float yawOffset = 0.0f;
-
     PFont font;
     Serial serial;
 
     boolean synched = false;
+    private Float[] acc;
+    private Float[] gyr;
+    private Float[] mag;
 
     void drawArrow(float headWidthFactor, float headLengthFactor) {
         float headWidth = headWidthFactor * 200.0f;
@@ -68,9 +68,6 @@ public class GForceDisplay extends PApplet {
     void drawBoard() {
         pushMatrix();
 
-        rotateY(-radians(yaw - yawOffset));
-        rotateX(-radians(pitch));
-        rotateZ(radians(roll));
 
         // Board body
         fill(255, 0, 0);
@@ -135,7 +132,7 @@ public class GForceDisplay extends PApplet {
         delay(3000);  // 3 seconds should be enough
 
         // Set Razor output parameters
-        serial.write("#ob");  // Turn on binary output
+        serial.write("#osrb");  // Turn on binary output
         serial.write("#o1");  // Turn on continuous streaming output
         serial.write("#oe0"); // Disable error message output
 
@@ -168,10 +165,11 @@ public class GForceDisplay extends PApplet {
         }
 
         // Read angles from serial port
-        while (serial.available() >= 12) {
-            yaw = readFloat(serial);
-            pitch = readFloat(serial);
-            roll = readFloat(serial);
+        while (serial.available() >= 36) {
+            //Order is: acc x/y/z, mag x/y/z, gyr x/y/z.
+            acc=new Float[]{readFloat(serial),readFloat(serial),readFloat(serial)};
+            mag=new Float[]{readFloat(serial),readFloat(serial),readFloat(serial)};
+            gyr=new Float[]{readFloat(serial),readFloat(serial),readFloat(serial)};
         }
 
         // Draw board
@@ -191,9 +189,10 @@ public class GForceDisplay extends PApplet {
         pushMatrix();
         translate(10, height - 10);
         textAlign(LEFT);
-        text("Yaw: " + ((int) yaw), 0, 0);
-        text("Pitch: " + ((int) pitch), 150, 0);
-        text("Roll: " + ((int) roll), 300, 0);
+        DecimalFormat format = new DecimalFormat("####.00");
+        text("Acc: " + format.format(acc[0]) + " -- " + format.format(acc[1])+ " -- " + format.format(acc[2]),0,0);
+        text("Mag: " + format.format(mag[0]) + " -- " + format.format(mag[1])+ " -- " + format.format(mag[2]),0,-20);
+        text("Gyr: " + format.format(gyr[0]) + " -- " + format.format(gyr[1])+ " -- " + format.format(gyr[2]),0,-40);
         popMatrix();
     }
 
@@ -201,15 +200,15 @@ public class GForceDisplay extends PApplet {
         switch (key) {
             case '0':  // Turn Razor's continuous output stream off
                 serial.write("#o0");
+                println("Turn Razor's continuous output stream off");
                 break;
             case '1':  // Turn Razor's continuous output stream on
                 serial.write("#o1");
+                println("Turn Razor's continuous output stream on");
                 break;
             case 'f':  // Request one single yaw/pitch/roll frame from Razor (use when continuous streaming is off)
                 serial.write("#f");
                 break;
-            case 'a':  // Align screen with Razor
-                yawOffset = yaw;
         }
     }
 
