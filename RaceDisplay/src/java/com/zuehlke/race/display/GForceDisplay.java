@@ -124,15 +124,8 @@ public class GForceDisplay extends PApplet {
     void setupRazor() {
         println("Trying to setup and synch Razor...");
 
-        // On Mac OSX and Linux (Windows too?) the board will do a reset when we connect, which is really bad.
-        // See "Automatic (Software) Reset" on http://www.arduino.cc/en/Main/ArduinoBoardProMini
-        // So we have to wait until the bootloader is finished and the Razor firmware can receive commands.
-        // To prevent this, disconnect/cut/unplug the DTR line going to the board. This also has the advantage,
-        // that the angles you receive are stable right from the beginning.
-        delay(3000);  // 3 seconds should be enough
-
         // Set Razor output parameters
-        serial.write("#osrb");  // Turn on binary output
+        serial.write("#oscb");  // Turn on binary output
         serial.write("#o1");  // Turn on continuous streaming output
         serial.write("#oe0"); // Disable error message output
 
