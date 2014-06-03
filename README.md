@@ -25,6 +25,7 @@ with the one the server runs on. Save, make sure you're in the nodejs-server fol
     node server.js
 
 This will start the nodejs-server. Wait for the "Initialized" output in the console. After that you're good to go.
+You may now connect with your device with #serverip:8080, where #serverip is the ip you changed previously.
 
 Project Idea
 ![IMG_0103.JPG](https://bitbucket.org/repo/5Axey7/images/4171111834-IMG_0103.JPG)
