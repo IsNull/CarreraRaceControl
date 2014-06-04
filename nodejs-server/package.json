@@ -1,0 +1,26 @@
+{
+  "name": "RaceControl",
+  "version": "0.0.0",
+  "description": "Race Control Website",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://bitbucket.org/nofrail/camp2014"
+  },
+  "keywords": [
+    "Slotcar",
+    "HTML5",
+    "Racing",
+    "Mobile"
+  ],
+  "author": "Marc Grünewald, Bruno Ritz & Florian Schrag",
+  "license": "-",
+  "dependencies": {
+    "websocket.io": "~0.2.1",
+    "johnny-five": "~0.7.47"
+  }
+}
