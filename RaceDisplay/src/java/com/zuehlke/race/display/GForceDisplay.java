@@ -45,7 +45,7 @@ public class GForceDisplay extends PApplet {
 
     public GForceDisplay() {
         try {
-            ws = new WebSocket(new URI("ws://192.168.174.1:9000"));
+            ws = new WebSocket(new URI("ws://127.0.0.1:9000"));
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -188,7 +188,8 @@ public class GForceDisplay extends PApplet {
         pushMatrix();
         translate(10, height - 10);
         textAlign(LEFT);
-        text("Speeed: " + speed, 0, -60);
+        text("Max Speed: " + maxSpeed, 0, -80);
+        text("Speed: " + speed, 0, -60);
         DecimalFormat format = new DecimalFormat("####.00");
         text("Acc: " + format.format(acc[0]) + " -- " + format.format(acc[1])+ " -- " + format.format(acc[2]),0,0);
         text("Mag: " + format.format(mag[0]) + " -- " + format.format(mag[1])+ " -- " + format.format(mag[2]),0,-20);
