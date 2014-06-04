@@ -29,13 +29,17 @@ public class GForceDisplay extends PApplet {
     PFont font;
     Serial serial;
 
+
     boolean synched = false;
     private float[] acc = new float[3];
     private float[] gyr = new float[3];
     private float[] mag = new float[3];
+    private float[] gyring = new float[100];
+    private int g = 0;
     private short speed = 0;
+    private int maxSpeed = 180;
 
-    private static final boolean connect = false;
+    private static final boolean connect = true;
 
     private WebSocket ws;
 
@@ -132,7 +136,9 @@ public class GForceDisplay extends PApplet {
             //Order is: acc x/y/z, mag x/y/z, gyr x/y/z.
             read(acc,3);
             read(mag,10);
-            read(gyr,100);
+            read(gyr,10);
+            g = (g+1)%100;
+            gyring[g] = gyr[2];
         }
 
         // Draw board
@@ -142,17 +148,22 @@ public class GForceDisplay extends PApplet {
         rect(acc[1]<0?400:400-abs(acc[1]),400,50+abs(acc[1]),50);
 
         fill(0,0,255);
-        rect(800,gyr[0]>0?800:800-abs(gyr[0]),50,50+abs(gyr[0]));
-        rect(gyr[1]<0?800:800-abs(gyr[1]),800,50+abs(gyr[1]),50);
+        rect(800,gyr[0]>0?400:400-abs(gyr[0]),50,50+abs(gyr[0]));
+        rect(850,gyr[1]>0?400:400-abs(gyr[1]),50,50+abs(gyr[1]));
+        rect(900,gyr[2]>0?        400:400-abs(gyr[2]),50,50+abs(gyr[2]));
         popMatrix();
 
-        if (abs(acc[1])>50&& speed >=40) {
-            speed = (short) (speed / 2);
+
+        //if (abs(gyring[g]-gyring[(g+100-5)%100])>4 && speed > 110) {
+        //    speed = 110;
+        //}else
+        if (abs(acc[1])>40&& speed >150) {
+            speed -= 40;
         }
-        else if (abs(acc[1])>20&& speed >=40) {
+        else if (abs(acc[1])>30&& speed >120) {
             speed -= 10;
         }
-        else if (speed <= 120)
+        else if (abs(acc[1])<=20 && speed <= maxSpeed)
         {
             speed += 10;
         }
@@ -205,6 +216,14 @@ public class GForceDisplay extends PApplet {
                 break;
             case 'f':  // Request one single yaw/pitch/roll frame from Razor (use when continuous streaming is off)
                 serial.write("#f");
+                break;
+            case 'o':
+                if (maxSpeed<=240)
+                    maxSpeed += 10;
+                break;
+            case 'l':
+                if (maxSpeed>=50)
+                    maxSpeed -= 10;
                 break;
         }
     }
