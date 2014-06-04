@@ -12,12 +12,11 @@ var socketServer = function () {
         socketDomain = domain.create(),
         httpDomain = domain.create(),
         five = require("johnny-five"),
-    /* change this to whatever port your Board is connected to (check in Device Manager) */
-        portName = "COM4",
-        board = new five.Board({port: portName}), car1, car2;
+       board, car1, car2;
 
 
-    function initArduinoBoardAndCars() {
+    function initArduinoBoardAndCars(comPort) {
+        board = new five.Board({port: comPort})
         board.on("ready", function () {
             car1 = new five.Motor({
                 pin: 6,
@@ -154,8 +153,8 @@ var socketServer = function () {
         },
 
 
-        init = function (httpPort, socketPort) {
-            initArduinoBoardAndCars();
+        init = function (httpPort, socketPort,comPort) {
+            initArduinoBoardAndCars(comPort);
             httpListen(httpPort);
             socketListen(socketPort);
         };
