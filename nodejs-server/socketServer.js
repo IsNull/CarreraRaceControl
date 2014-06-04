@@ -13,7 +13,7 @@ var socketServer = function () {
         httpDomain = domain.create(),
         five = require("johnny-five"),
     /* change this to whatever port your Board is connected to (check in Device Manager) */
-        portName = "COM9",
+        portName = "COM4",
         board = new five.Board({port: portName}), car1, car2;
 
 
@@ -36,7 +36,7 @@ var socketServer = function () {
                     range: [0, 255]
                 }
             });
-        })
+        });
     }
 
     httpListen = function (port) {
@@ -52,10 +52,10 @@ var socketServer = function () {
                 var pathname = url.parse(req.url).pathname;
                 console.log(pathname);
                 if (pathname == '/' || pathname == '/index.html') {
-                    readFile(res, 'index.html');
+                    readFile(res, 'public/index.html');
                 }
                 else {
-                    readFile(res, '.' + pathname);
+                    readFile(res, 'public/' + pathname);
                 }
             }).listen(port, "0.0.0.0");
         });
