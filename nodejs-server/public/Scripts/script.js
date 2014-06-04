@@ -1,8 +1,7 @@
 $(document).ready(function () {
 
-    /* this needs to be set to the ip on which you're going to connect from your mobile device(s) */
     var settings = {
-        host: 'ws://192.168.174.1:9000'
+        host: 'ws://'+window.location.hostname+':9000'
     };
 
     var clientHasCarRegistered = false;
@@ -11,11 +10,11 @@ $(document).ready(function () {
 
     $("#c1").click(function () {
         registerDeviceOrientationListenerForGivenCar("C1");
-    })
+    });
 
     $("#c2").click(function () {
         registerDeviceOrientationListenerForGivenCar("C2");
-    })
+    });
 
     function registerDeviceOrientationListenerForGivenCar(givenCar) {
         if (!clientHasCarRegistered) {
