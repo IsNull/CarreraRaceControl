@@ -1,42 +1,90 @@
 $(document).ready(function () {
 
+    var selectedCar;
+
+    hideComponentsInitially();
+    $("#ex4").on("change", function () {
+        document.getElementById("text").innerHTML = $(this).value();
+    })
+
     var settings = {
-        host: 'ws://'+window.location.hostname+':9000'
+        host: 'ws://' + window.location.hostname + ':9000'
     };
 
-    var clientHasCarRegistered = false;
+    var connection = new WebSocket(settings.host);;
 
-    var connection = new WebSocket(settings.host);
 
     $("#c1").click(function () {
-        registerDeviceOrientationListenerForGivenCar("C1");
+        tryToConnectToGivenCar("C1")
     });
 
     $("#c2").click(function () {
-        registerDeviceOrientationListenerForGivenCar("C2");
+        tryToConnectToGivenCar("C2")
     });
 
+    $("#control1").click(function () {
+        registerDeviceOrientationListenerForGivenCar(selectedCar);
+    });
+
+    $("#control2").click(function () {
+        registerSliderControlsForGivenCar(selectedCar);
+    });
+
+    function registerSliderControlsForGivenCar(givenCar) {
+        $("#sliderControl").show();
+        $("#controlSelection").hide();
+        $("#sliderControl").on("touchend", function () {
+            $("#ex4").slider("setValue", 255)
+            connection.send(givenCar + ": " + 0);
+        })
+        $("#ex4").slider({
+            formater: function (value) {
+                connection.send(givenCar + ": " + this.max - value);
+                return 'Current value: ' + (this.max - value);
+            }
+        });
+    }
+
+
     function registerDeviceOrientationListenerForGivenCar(givenCar) {
-        if (!clientHasCarRegistered) {
-            if (window.DeviceOrientationEvent) {
-                document.getElementById("doEvent").innerHTML = "DeviceOrientation";
+        $("#controlSelection").hide();
+        $("#orientationControl").show();
+        if (window.DeviceOrientationEvent) {
+            document.getElementById("doEvent").innerHTML = "DeviceOrientation";
 
+            // Listen for the deviceorientation event and handle the raw data
+            window.addEventListener('deviceorientation', function (eventData) {
+                // beta is the front-to-back tilt in degrees, where front is positive
+                var tiltFB = eventData.beta;
+
+                var translatedSpeed = translateSpeed(Math.round(tiltFB));
+
+                document.getElementById("doTiltFB").innerHTML = translatedSpeed;
                 // Listen for the deviceorientation event and handle the raw data
-                window.addEventListener('deviceorientation', function (eventData) {
-                    // beta is the front-to-back tilt in degrees, where front is positive
-                    var tiltFB = eventData.beta;
+                connection.send(givenCar + ": " + translatedSpeed);
+            }, false);
+        } else {
+            document.getElementById("doEvent").innerHTML = "Not supported."
+        }
+    }
 
-                    var translatedSpeed = translateSpeed(Math.round(tiltFB));
-
-                    document.getElementById("doTiltFB").innerHTML = translatedSpeed;
-                    // Listen for the deviceorientation event and handle the raw data
-                    connection.send(givenCar + ": " + translatedSpeed);
-                }, false);
-                disableCarSelection();
+    function tryToConnectToGivenCar(givenCar) {
+        connection.onmessage = function (data) {
+            if (data.data.indexOf("fault") !== -1) {
+                console.log("player already set. Will create new WebSocket")
+                connection = new WebSocket(settings.host);
+                $("#playerSetError").show();
+                return false;
             } else {
-                document.getElementById("doEvent").innerHTML = "Not supported."
+                $("#playerSetError").hide();
+                console.log("player set")
+                //this means the player is already set on another device. On server-side the socket has been closed/rejected
+                selectedCar = givenCar;
+                hideCarSelection();
+                return true;
             }
         }
+        connection.send("setPlayer" + givenCar);
     }
 
     function translateSpeed(tiltFB) {
@@ -55,9 +103,16 @@ $(document).ready(function () {
         return Math.round(255 * (degreeAsPercentage / 100));
     }
 
-    function disableCarSelection() {
-        $("#c1").attr("disabled", "disabled");
-        $("#c2").attr("disabled", "disabled");
+    function hideCarSelection() {
+        $("#carSelection").hide();
+        $("#controlSelection").show();
+    }
+
+    function hideComponentsInitially() {
+        $("#controlSelection").hide();
+        $("#orientationControl").hide();
+        $("#sliderControl").hide();
+        $("#playerSetError").hide();
     }
 });
 

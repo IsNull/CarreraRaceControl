@@ -6,12 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>WebSockets and Node.js</title>
 
+    <script src="js/jquery.min.js"></script>
+    <script src="js/modernizr.js"></script>
     <!-- Bootstrap for awesome and beautiful components -->
     <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/slider.css">
     <script src="js/bootstrap.min.js"></script>
+    <script src="js/bootstrap-slider.js"></script>
 
     <!-- mandatory js files -->
-    <script src="js/jquery.min.js"></script>
     <script src="Scripts/script.js"></script>
 </head>
 
@@ -19,36 +22,74 @@
 
 <div class="container">
 
-    <div class="jumbotron">
+    <div id="jumbotron" class="jumbotron">
         <h1>RaceMaschine - Zühlke Camp 2014 nodejs-Arduino Project</h1>
 
-        <p class="lead">Please select a car you want to control with the Orientation sensor on your device. Fancy stuff,
-            huh?</p>
+        <div id="playerSetError" class="alert alert-danger">Oh man, the player is already set.. Try the other one!</div>
 
         <div class="row">
-            <div class="col-lg-12">
-                <a id="c1" class="btn btn-success" href="#" role="button">Car 1(outer lane)</a>
+            <div id="carSelection">
+                <p class="lead">Please select a car you want to control with the Orientation sensor on your device.
+                    Fancy
+                    stuff,
+                    huh?</p>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <a id="c1" class="btn btn-success" href="#" role="button">Car 1(outer lane)</a>
+                    </div>
+                </div>
+                <br/>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <a id="c2" class="btn btn-success" href="#" role="button">Car 2(inner lane)</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="controlSelection">
+                <p class="lead">Well done, you've pressed a button. Now select how you want to control the car!</p>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <a id="control1" class="btn btn-success" href="#" role="button">Device orientation (fancy)</a>
+                    </div>
+                </div>
+                <br/>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <a id="control2" class="btn btn-success" href="#" role="button">Slider (not that fancy)</a>
+                    </div>
+                </div>
             </div>
         </div>
-        <br />
-        <div class="row">
-            <div class="col-lg-12">
-                <a id="c2" class="btn btn-success" href="#" role="button">Car 2(inner lane)</a>
+        <div id="orientationControl">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h2>Device Orientation</h2>
+                    <table>
+                        <tr>
+                            <td>Event Supported</td>
+                            <td id="doEvent"></td>
+                        </tr>
+                        <tr>
+                            <td>Tilt Front/Back [beta]</td>
+                            <td id="doTiltFB"></td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-lg-12">
-                <h2>Device Orientation</h2>
-                <table>
-                    <tr>
-                        <td>Event Supported</td>
-                        <td id="doEvent"></td>
-                    </tr>
-                    <tr>
-                        <td>Tilt Front/Back [beta]</td>
-                        <td id="doTiltFB"></td>
-                    </tr>
-                </table>
+        <div id="sliderControl">
+            <div class="row">
+                <div class="col-lg-4"></div>
+                <div class="col-lg-5">
+                    <input id="ex4" type="text" class="sliderMaster slider-horizontal" value=""
+                           data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="255"
+                           data-slider-orientation="vertical" data-slider-selection="none" data-slider-tooltip="show">
+                </div>
             </div>
         </div>
     </div>

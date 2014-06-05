@@ -12,7 +12,7 @@ var socketServer = function () {
         socketDomain = domain.create(),
         httpDomain = domain.create(),
         five = require("johnny-five"),
-        board, car1, car2;
+        board, car1, car2, playerOneSet, playerTwoSet;
 
     function initArduinoBoardAndCars(comPort) {
         board = new five.Board({port: comPort})
@@ -48,7 +48,7 @@ var socketServer = function () {
         httpDomain.run(function () {
             http.createServer(function (req, res) {
                 var pathname = url.parse(req.url).pathname;
-                console.log(pathname);
+                console.log(pathname.blue);
                 if (pathname == '/' || pathname == '/index.html') {
                     readFile(res, 'public/index.html');
                 } else {
@@ -58,104 +58,147 @@ var socketServer = function () {
         });
     },
 
-    readFile = function (res, pathname) {
-        fs.readFile(pathname, function (err, data) {
-            if (err) {
-                console.log(err.message);
-                res.writeHead(404, {
-                    'content-type': 'text/html'
-                });
-                res.write('File not found: ' + pathname);
-                res.end();
-            } else {
-                res.write(data);
-                res.end();
-            }
-        });
-    },
-
-    socketListen = function (port) {
-        socketDomain.on('error', function (err) {
-            console.log('Error caught in socket domain:' + err);
-        });
-
-        socketDomain.on('uncaughtException', function (err) {
-            console.error(err.stack);
-            console.log("Node NOT Exiting...");
-        });
-
-        function registerSocketCloseListener(socket) {
-
-            socket.on('error', function (err) {
-                console.log('Error caught in socket:' + err + ". If this is ECONNRESET it's pretty much save to ignore. Probably due to a F5 refresh on a mobile.");
-            });
-            socket.on('uncaughtException', function (err) {
-                console.log('UncaughtException caught in socket:' + err);
-            });
-
-            socket.on('close', function () {
-                try {
-                    socket.close();
-                    socket.destroy();
-                    console.log('Socket closed!');
-                    for (var i = 0; i < sockets.length; i++) {
-                        if (sockets[i] == socket) {
-                            sockets.splice(i, 1);
-                            console.log('Removing socket from collection. Collection length: ' + sockets.length);
-                            break;
-                        }
-                    }
-
-                    if (sockets.length == 0) {
-                        clearInterval(timerID);
-                        data = null;
-                    }
-                } catch (e) {
-                    console.log(e);
+        readFile = function (res, pathname) {
+            fs.readFile(pathname, function (err, data) {
+                if (err) {
+                    console.log(err.message);
+                    res.writeHead(404, {
+                        'content-type': 'text/html'
+                    });
+                    res.write('File not found: '.red + pathname);
+                    res.end();
+                } else {
+                    res.write(data);
+                    res.end();
                 }
             });
-        }
+        },
 
-        function registerSocketConnectionListener() {
-            socketServer.on('connection', function (socket) {
+        socketListen = function (port) {
+            socketDomain.on('error', function (err) {
+                console.log('Error caught in socket domain:'.red + err);
+            });
 
+            socketDomain.on('uncaughtException', function (err) {
+                console.error(err.stack);
+                console.log("Node NOT Exiting...".yellow);
+            });
 
-                console.log('Connected to client');
-                sockets.push(socket);
-
-                socket.on('message', function (data) {
-
-                    if (data.contains("C1")) {
-                        var speed = data.split("C1: ")[1];
-                        car1.start(speed);
-                    } else if (data.contains("C2")) {
-                        var speed = data.split("C2: ")[1];
-                        car2.start(speed);
+            function closeSocketAndRemoveFromList(socket) {
+                if (socket.player === 1) {
+                    playerOneSet = false;
+                    console.log("Player 1 can be set again".yellow);
+                } else if (socket.player === 2) {
+                    playerTwoSet = false;
+                    console.log("Player 2 can be set again".yellow);
+                }
+                socket.close();
+                socket.destroy();
+                console.log('Socket closed!'.yellow);
+                for (var i = 0; i < sockets.length; i++) {
+                    if (sockets[i] == socket) {
+                        sockets.splice(i, 1);
+                        console.log('Removing socket from collection. Collection length: '.yellow + sockets.length);
+                        break;
                     }
+                }
+            }
+
+            function registerSocketCloseListener(socket) {
+
+                socket.on('error', function (err) {
+                    console.log('Error caught in socket:'.red + err + ". If this is ECONNRESET it's pretty much save to ignore. Probably due to a F5 refresh on a mobile.".red);
                 });
 
-                registerSocketCloseListener(socket);
+                socket.on('uncaughtException', function (err) {
+                    console.log('UncaughtException caught in socket:' + err + "".red);
+                });
 
+                socket.on('close', function () {
+                    try {
+                        closeSocketAndRemoveFromList(socket);
+                        if (sockets.length == 0) {
+                            clearInterval(timerID);
+                            data = null;
+                        }
+                    } catch (e) {
+                        console.log(e);
+                    }
+                });
+            }
+
+            function setPlayerIfPossible(data, socket) {
+                if (data.indexOf("setPlayerC1") !== -1) {
+                    if (playerOneSet) {
+                        return false;
+                    } else {
+                        playerOneSet = true;
+                        socket.player = 1;
+                        console.log("Set player 1!".green)
+                        return true;
+                    }
+                } else if (data.indexOf("setPlayerC2") !== -1) {
+                    if (playerTwoSet) {
+                        return false;
+                    } else {
+                        playerTwoSet = true;
+                        socket.player = 2;
+                        console.log("Set player 2!".green)
+                        return true;
+                    }
+                }
+            }
+
+            function registerSocketConnectionListener() {
+                socketServer.on('connection', function (socket) {
+
+                    console.log('Connected to client'.green);
+                    sockets.push(socket);
+
+                    socket.on('message', function (data) {
+
+                        if (data.indexOf("setPlayer") !== -1) {
+                            if (setPlayerIfPossible(data, socket)) {
+                                socket.send("ok");
+                            } else {
+                                socket.send("fault");
+                                closeSocketAndRemoveFromList(socket);
+                                console.log("Removed socket because the player is already set!".yellow)
+                            }
+                        } else {
+                            if (data.contains("C1:")) {
+                                var speed = data.split("C1: ")[1];
+                                car1.start(speed);
+                            } else if (data.contains("C2:")) {
+                                var speed = data.split("C2: ")[1];
+                                car2.start(speed);
+                            }
+                        }
+                    });
+
+                    registerSocketCloseListener(socket);
+
+                });
+            }
+
+            socketDomain.run(function () {
+                socketServer = ws.listen(port);
+
+                socketServer.on('listening', function () {
+                    console.log('SocketServer is running'.green);
+                });
+
+                registerSocketConnectionListener();
             });
-        }
-
-        socketDomain.run(function () {
-            socketServer = ws.listen(port);
-
-            socketServer.on('listening', function () {
-                console.log('SocketServer is running');
-            });
-
-            registerSocketConnectionListener();
-        });
-    },
+        },
 
 
-    init = function (httpPort, socketPort, comPort) {
-        initArduinoBoardAndCars(comPort);
-        httpListen(httpPort);
-        socketListen(socketPort);
-    };
+        init = function (httpPort, socketPort, comPort) {
+            initArduinoBoardAndCars(comPort);
+            httpListen(httpPort);
+            socketListen(socketPort);
+            console.log("I'm ready and set. Try to connect now!".green)
+        };
 
     return {
         init: init
