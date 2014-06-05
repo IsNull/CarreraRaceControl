@@ -4,11 +4,14 @@ import processing.core.PApplet;
 import processing.core.PFont;
 import processing.serial.Serial;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.util.LinkedList;
+import java.util.Properties;
 
 /**
  * ***************************************************************************************
@@ -23,10 +26,10 @@ public class GForceDisplay extends PApplet {
 // 1. Have a look at the Processing console output of this sketch.
 // 2. Look for the serial port list and find the port you need (it's the same as in Arduino).
 // 3. Set your port number here:
-    private final static int SERIAL_PORT_NUM = 0;
+    private final int SERIAL_PORT_NUM;
 // 4. Try again.
 
-    private static final boolean CONNECT_TO_RACE_CONTROL = true;
+    private final boolean CONNECT_TO_RACE_CONTROL;
     private final static int SERIAL_PORT_BAUD_RATE = 57600;
 
     private PFont font;
@@ -38,13 +41,13 @@ public class GForceDisplay extends PApplet {
     private float[] gyr = new float[3];
     private float[] mag = new float[3];
     private int speed = 0;
-    private int maxSpeed = 180;
-    private int accThreshold1 = 60;
-    private int accThreshold2 = 40;
-    private int accThreshold3 = 30;
-    private int speedLevel1 = 150;
-    private int speedLevel2 = 120;
-    private float gyrThreshold = 8f;
+    private int maxSpeed;
+    private int accThreshold1;
+    private int accThreshold2;
+    private int accThreshold3;
+    private int speedLevel1;
+    private int speedLevel2;
+    private float gyrThreshold;
 
 
     private WebSocket ws;
@@ -52,11 +55,35 @@ public class GForceDisplay extends PApplet {
     LinkedList<PointXY> trail = new LinkedList<>();
     int maxTrailLength = 60;
 
-    public GForceDisplay() {
+    public GForceDisplay() throws URISyntaxException {
+        println("hello");
+        SERIAL_PORT_NUM = Integer.parseInt(System.getProperty("portNr","0"));
+        CONNECT_TO_RACE_CONTROL = Boolean.parseBoolean(System.getProperty("connect","false"));
+        ws = new WebSocket(new URI(System.getProperty("url","ws://127.0.0.1:9000")));
+
+        Properties prop = new Properties();
+        InputStream input = null;
+
         try {
-            ws = new WebSocket(new URI("ws://127.0.0.1:9000"));
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+            input = new FileInputStream(System.getProperty("config","config.properties"));
+            // get the property value and print it out
+            prop.load(input);
+            maxSpeed = Integer.parseInt(prop.getProperty("maxSpeed"));
+            accThreshold1 = Integer.parseInt(prop.getProperty("accThreshold1"));
+            accThreshold2 = Integer.parseInt(prop.getProperty("accThreshold2"));
+            accThreshold3 = Integer.parseInt(prop.getProperty("accThreshold3"));
+            speedLevel1 = Integer.parseInt(prop.getProperty("speedLevel1"));
+            gyrThreshold = Float.parseFloat(prop.getProperty("gyrThreshold"));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
