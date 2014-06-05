@@ -1,42 +1,82 @@
 $(document).ready(function () {
 
+    var selectedCar;
+
+    $("#controlSelection").hide();
+    $("#orientationControl").hide();
+    $("#sliderControl").hide();
+
+
+    $("#ex4").on("change", function () {
+        document.getElementById("text").innerHTML = $(this).value();
+    })
+
     var settings = {
-        host: 'ws://'+window.location.hostname+':9000'
+        host: 'ws://' + window.location.hostname + ':9000'
     };
 
     var clientHasCarRegistered = false;
 
     var connection = new WebSocket(settings.host);
 
+
     $("#c1").click(function () {
-        registerDeviceOrientationListenerForGivenCar("C1");
+        registerGivenCar("C1");
     });
 
     $("#c2").click(function () {
-        registerDeviceOrientationListenerForGivenCar("C2");
+        registerGivenCar("C2");
     });
 
-    function registerDeviceOrientationListenerForGivenCar(givenCar) {
-        if (!clientHasCarRegistered) {
-            if (window.DeviceOrientationEvent) {
-                document.getElementById("doEvent").innerHTML = "DeviceOrientation";
+    $("#control1").click(function () {
+        registerDeviceOrientationListenerForGivenCar(selectedCar);
+    });
 
-                // Listen for the deviceorientation event and handle the raw data
-                window.addEventListener('deviceorientation', function (eventData) {
-                    // beta is the front-to-back tilt in degrees, where front is positive
-                    var tiltFB = eventData.beta;
+    $("#control2").click(function () {
+        registerSliderControlsForGivenCar(selectedCar);
+    });
 
-                    var translatedSpeed = translateSpeed(Math.round(tiltFB));
-
-                    document.getElementById("doTiltFB").innerHTML = translatedSpeed;
-                    // Listen for the deviceorientation event and handle the raw data
-                    connection.send(givenCar + ": " + translatedSpeed);
-                }, false);
-                disableCarSelection();
-            } else {
-                document.getElementById("doEvent").innerHTML = "Not supported."
+    function registerSliderControlsForGivenCar(givenCar) {
+        $("#sliderControl").show();
+        $("#controlSelection").hide();
+        $("#sliderControl").on("touchend", function () {
+            $("#ex4").slider("setValue", 255)
+            connection.send(givenCar + ": " + 0);
+        })
+        $("#ex4").slider({
+            formater: function (value) {
+                connection.send(givenCar + ": " + this.max - value);
+                return 'Current value: ' + (this.max - value);
             }
+        });
+    }
+
+
+    function registerDeviceOrientationListenerForGivenCar(givenCar) {
+        $("#controlSelection").hide();
+        $("#orientationControl").show();
+        if (window.DeviceOrientationEvent) {
+            document.getElementById("doEvent").innerHTML = "DeviceOrientation";
+
+            // Listen for the deviceorientation event and handle the raw data
+            window.addEventListener('deviceorientation', function (eventData) {
+                // beta is the front-to-back tilt in degrees, where front is positive
+                var tiltFB = eventData.beta;
+
+                var translatedSpeed = translateSpeed(Math.round(tiltFB));
+
+                document.getElementById("doTiltFB").innerHTML = translatedSpeed;
+                // Listen for the deviceorientation event and handle the raw data
+                connection.send(givenCar + ": " + translatedSpeed);
+            }, false);
+        } else {
+            document.getElementById("doEvent").innerHTML = "Not supported."
         }
+    }
+
+    function registerGivenCar(givenCar) {
+        selectedCar = givenCar;
+        hideCarSelection();
     }
 
     function translateSpeed(tiltFB) {
@@ -55,9 +95,9 @@ $(document).ready(function () {
         return Math.round(255 * (degreeAsPercentage / 100));
     }
 
-    function disableCarSelection() {
-        $("#c1").attr("disabled", "disabled");
-        $("#c2").attr("disabled", "disabled");
+    function hideCarSelection() {
+        $("#carSelection").hide();
+        $("#controlSelection").show();
     }
 });
 
