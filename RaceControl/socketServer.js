@@ -11,6 +11,7 @@ var socketServer = function () {
         domain = require('domain'),
         socketDomain = domain.create(),
         httpDomain = domain.create(),
+        globalDebug = false,
         five = require("johnny-five"),
         board, car1, car2, playerOneSet, playerTwoSet;
 
@@ -87,9 +88,11 @@ var socketServer = function () {
             function closeSocketAndRemoveFromList(socket) {
                 if (socket.player === 1) {
                     playerOneSet = false;
+                    car1.stop();
                     console.log("Player 1 can be set again".yellow);
                 } else if (socket.player === 2) {
                     playerTwoSet = false;
+                    car2.stop();
                     console.log("Player 2 can be set again".yellow);
                 }
                 socket.close();
@@ -157,6 +160,11 @@ var socketServer = function () {
 
                     socket.on('message', function (data) {
 
+                        if (globalDebug) {
+                            var string = "server received message: " + data;
+                            console.log(string.greyBG);
+                        }
+
                         if (data.indexOf("setPlayer") !== -1) {
                             if (setPlayerIfPossible(data, socket)) {
                                 socket.send("ok");
@@ -168,9 +176,15 @@ var socketServer = function () {
                         } else {
                             if (data.contains("C1:")) {
                                 var speed = data.split("C1: ")[1];
+                                if (globalDebug) {
+                                    console.log("New speed: ".greyBG + speed)
+                                }
                                 car1.start(speed);
                             } else if (data.contains("C2:")) {
                                 var speed = data.split("C2: ")[1];
+                                if (globalDebug) {
+                                    console.log("New speed: ".greyBG + speed)
+                                }
                                 car2.start(speed);
                             }
                         }
@@ -193,11 +207,14 @@ var socketServer = function () {
         },
 
 
-        init = function (httpPort, socketPort, comPort) {
+        init = function (httpPort, socketPort, comPort, debug) {
+            if (debug && debug.indexOf("-d") !== -1) {
+                globalDebug = true;
+            }
             initArduinoBoardAndCars(comPort);
             httpListen(httpPort);
             socketListen(socketPort);
-            console.log("I'm ready and set. Try to connect now!".green)
+            console.log("I'm ready and set. Try to connect now! Debug is".green, globalDebug==true ? "on".green : "off".green);
         };
 
     return {

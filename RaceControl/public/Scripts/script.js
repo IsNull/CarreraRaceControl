@@ -3,7 +3,7 @@ $(document).ready(function () {
     var selectedCar;
 
     hideComponentsInitially();
-    $("#ex4").on("change", function () {
+    $("#sliderControl").on("change", function () {
         document.getElementById("text").innerHTML = $(this).value();
     })
 
@@ -11,8 +11,7 @@ $(document).ready(function () {
         host: 'ws://' + window.location.hostname + ':9000'
     };
 
-    var connection = new WebSocket(settings.host);;
-
+    var connection = new WebSocket(settings.host);
 
     $("#c1").click(function () {
         tryToConnectToGivenCar("C1")
@@ -33,16 +32,18 @@ $(document).ready(function () {
     function registerSliderControlsForGivenCar(givenCar) {
         $("#sliderControl").show();
         $("#controlSelection").hide();
+        console.log($("#sliderControl"))
         $("#sliderControl").on("touchend", function () {
             $("#ex4").slider("setValue", 255)
             connection.send(givenCar + ": " + 0);
         })
         $("#ex4").slider({
             formater: function (value) {
-                connection.send(givenCar + ": " + this.max - value);
-                return 'Current value: ' + (this.max - value);
+                return 'Current value: ' + (255 - value);
             }
-        });
+        }).on("slide", function (ev) {
+                connection.send(givenCar + ": " + (255 - ev.value));
+            });
     }
 
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, height=device-height initial-scale=1">
     <title>WebSockets and Node.js</title>
 
     <script src="js/jquery.min.js"></script>
@@ -20,10 +20,10 @@
 
 <body>
 
-<div class="container">
+<div class="container outer" >
 
-    <div id="jumbotron" class="jumbotron">
-        <h1>RaceMaschine - Zühlke Camp 2014 nodejs-Arduino Project</h1>
+    <div id="jumbotron" class="jumbotron outer">
+        <h3>RaceMaschine - Zühlke Camp 2014 nodejs-Arduino Project</h3>
 
         <div id="playerSetError" class="alert alert-danger">Oh man, the player is already set.. Try the other one!</div>
 
@@ -82,10 +82,10 @@
                 </div>
             </div>
         </div>
-        <div id="sliderControl">
-            <div class="row">
+        <div id="sliderControl" style="height: 90%; margin-left: 35%">
+            <div class="row" style="height: 90%">
                 <div class="col-lg-4"></div>
-                <div class="col-lg-5">
+                <div class="col-lg-5" style="height: 90%">
                     <input id="ex4" type="text" class="sliderMaster slider-horizontal" value=""
                            data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="255"
                            data-slider-orientation="vertical" data-slider-selection="none" data-slider-tooltip="show">
