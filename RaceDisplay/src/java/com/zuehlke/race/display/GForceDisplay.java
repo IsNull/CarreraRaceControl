@@ -10,10 +10,12 @@ import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.util.LinkedList;
 
-/******************************************************************************************
+/**
+ * ***************************************************************************************
  * Based on Test Sketch for Razor AHRS v1.4.2
  * https://github.com/ptrbrtz/razor-9dof-ahrs
- ******************************************************************************************/
+ * ****************************************************************************************
+ */
 
 public class GForceDisplay extends PApplet {
 
@@ -21,24 +23,28 @@ public class GForceDisplay extends PApplet {
 // 1. Have a look at the Processing console output of this sketch.
 // 2. Look for the serial port list and find the port you need (it's the same as in Arduino).
 // 3. Set your port number here:
-    final static int SERIAL_PORT_NUM = 0;
+    private final static int SERIAL_PORT_NUM = 0;
 // 4. Try again.
 
+    private static final boolean CONNECT_TO_RACE_CONTROL = false;
+    private final static int SERIAL_PORT_BAUD_RATE = 57600;
 
-    final static int SERIAL_PORT_BAUD_RATE = 57600;
-
-    PFont font;
-    Serial serial;
+    private PFont font;
+    private Serial serial;
 
 
     boolean synched = false;
     private float[] acc = new float[3];
     private float[] gyr = new float[3];
     private float[] mag = new float[3];
-    private short speed = 0;
+    private int speed = 0;
     private int maxSpeed = 180;
+    private int accThreshold1 = 60;
+    private int accThreshold2 = 40;
+    private int accThreshold3 = 30;
+    private int speedLevel1 = 150;
+    private int speedLevel2 = 120;
 
-    private static final boolean connect = false;
 
     private WebSocket ws;
 
@@ -94,7 +100,7 @@ public class GForceDisplay extends PApplet {
         serial = new Serial(this, portName, SERIAL_PORT_BAUD_RATE);
 
         try {
-            if (connect) ws.connect();
+            if (CONNECT_TO_RACE_CONTROL) ws.connect();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -122,83 +128,48 @@ public class GForceDisplay extends PApplet {
         // Reset scene
         background(0);
         lights();
+        if (checkSyncWithRazor()) return;
 
-        float scaleFactor = (width/1000);
+        float scaleFactor = min((height / 768f), (width / 1024f));
+        float diameter = 50 * scaleFactor;
 
-        // Sync with Razor
-        if (!synched) {
-            textAlign(CENTER);
-            fill(255);
+        readSerialData(scaleFactor);
+        autoPilot();
 
-            text("Connecting to Razor...", width / 2, height / 2, -200);
-            if (frameCount == 2) {
-                setupRazor();  // Set ouput params and request synch token
-            }
-            else if (frameCount > 2) {
-                text("...waiting for Sync token", width / 2, height / 2 + 50, -200);
-                synched = readToken(serial, "#SYNCH00\r\n");  // Look for synch token
-            }
-            return;
-        }
+        drawGravityTrail(diameter);
+        drawGravityCross(scaleFactor, diameter);
+        drawGravityThreshold(accThreshold1, scaleFactor, diameter);
+        drawGravityThreshold(accThreshold2, scaleFactor, diameter);
+        drawGravityThreshold(accThreshold3, scaleFactor, diameter);
 
-        // Read angles from serial port
-        while (serial.available() >= 36) {
-            //Order is: acc x/y/z, mag x/y/z, gyr x/y/z.
-            read(acc,3);
-            read(mag,10);
-            read(gyr,10);
+        drawSpeedoMeter(scaleFactor);
+        drawGyro(scaleFactor);
 
+        drawTextualData();
+    }
 
-            PointXY p = new PointXY(width/2+acc[1]*scaleFactor,height/2-acc[0]*scaleFactor);
-            trail.addFirst(p);
-            // If trail is too 'long' remove the oldest points
-            while (trail.size () > maxTrailLength)
-                trail.removeLast();
-        }
+    private void drawGyro(float scaleFactor) {
+        stroke(255);
+        fill(50);
+        strokeWeight(4*scaleFactor);
 
-        // Draw board
         pushMatrix();
-        float diameter = 50*scaleFactor;
-
-        if (trail.size() >= 2) {
-            for (int i = trail.size()-1; i > 0 ; i--) {
-                PointXY currPoint = trail.get(i);
-                float smallDiameter = diameter*((1f*(trail.size()-i))/(2f*trail.size()));
-                fill(0,(1f*(trail.size()-i))/(1f*trail.size())*255,0);
-                ellipse(currPoint.x,currPoint.y,smallDiameter,smallDiameter);
-            }
-            fill(0,255,0);
-            ellipse(trail.get(0).x,trail.get(0).y,diameter,diameter);
-        }
+        translate(width -140*scaleFactor,140*scaleFactor);
+        rotate(radians(gyr[2]/180));
+        line(0, 0, 0, -100*scaleFactor);
         popMatrix();
 
+    }
 
-        //if (abs(gyring[g]-gyring[(g+100-5)%100])>4 && speed > 110) {
-        //    speed = 110;
-        //}else
-        if (abs(acc[1])>40&& speed >150) {
-            speed -= 40;
-        }
-        else if (abs(acc[1])>30&& speed >120) {
-            speed -= 10;
-        }
-        else if (abs(acc[1])<=20 && speed <= maxSpeed)
-        {
-            speed += 10;
-        }
+    private void drawSpeedoMeter(float scaleFactor) {
+        stroke(255);
+        fill(50);
+        rect(scaleFactor*5,scaleFactor*5,50*scaleFactor,400*scaleFactor,5*scaleFactor);
+        fill(200,50,0);
+        rect(scaleFactor*5,scaleFactor*5+(1f-speed/255f)*(400*scaleFactor),50*scaleFactor,(speed/255f)*(400*scaleFactor),0,0,5*scaleFactor,5*scaleFactor);
+    }
 
-        try {
-            if (connect) ws.send("C1: "+speed);
-        } catch (IOException e) {
-            if (connect) try {
-                ws.connect();
-            } catch (IOException e1) {
-                throw new RuntimeException(e1);
-            }
-            e.printStackTrace();
-        }
-
-
+    private void drawTextualData() {
         textFont(font, 20);
         fill(255);
         textAlign(LEFT);
@@ -210,16 +181,107 @@ public class GForceDisplay extends PApplet {
         text("Max Speed: " + maxSpeed, 0, -80);
         text("Speed: " + speed, 0, -60);
         DecimalFormat format = new DecimalFormat("####.00");
-        text("Acc: " + format.format(acc[0]) + " -- " + format.format(acc[1])+ " -- " + format.format(acc[2]),0,0);
-        text("Mag: " + format.format(mag[0]) + " -- " + format.format(mag[1])+ " -- " + format.format(mag[2]),0,-20);
-        text("Gyr: " + format.format(gyr[0]) + " -- " + format.format(gyr[1])+ " -- " + format.format(gyr[2]),0,-40);
+        text("Acc: " + format.format(acc[0]) + " -- " + format.format(acc[1]) + " -- " + format.format(acc[2]), 0, 0);
+        text("Mag: " + format.format(mag[0]) + " -- " + format.format(mag[1]) + " -- " + format.format(mag[2]), 0, -20);
+        text("Gyr: " + format.format(gyr[0]) + " -- " + format.format(gyr[1]) + " -- " + format.format(gyr[2]), 0, -40);
         popMatrix();
     }
 
-    private void read(float[] val,float smoothing) {
-        val[0] += (readFloat(serial)-val[0])/smoothing;
-        val[1] += (readFloat(serial)-val[1])/smoothing;
-        val[2] += (readFloat(serial)-val[2])/smoothing;
+    private void autoPilot() {
+        //if (abs(gyring[g]-gyring[(g+100-5)%100])>4 && speed > 110) {
+        //    speed = 110;
+        //}else
+        if (abs(acc[1]) > accThreshold1 && speed > speedLevel1) {
+            speed -= 40;
+        } else if (abs(acc[1]) > accThreshold2 && speed > speedLevel2) {
+            speed -= 10;
+        } else if (abs(acc[1]) <= accThreshold3) {
+            speed += 10;
+            if (speed > maxSpeed)
+                speed = maxSpeed;
+        }
+
+        try {
+            if (CONNECT_TO_RACE_CONTROL) ws.send("C1: " + speed);
+        } catch (IOException e) {
+            if (CONNECT_TO_RACE_CONTROL) try {
+                ws.connect();
+            } catch (IOException e1) {
+                throw new RuntimeException(e1);
+            }
+            e.printStackTrace();
+        }
+    }
+
+    private void drawGravityThreshold(float accThreshold, float scaleFactor, float diameter) {
+        // gravity border
+        stroke(128);
+        strokeWeight(2 * scaleFactor);
+        float size = accThreshold*scaleFactor*2;
+        line(width / 2 + diameter/2 + accThreshold*scaleFactor, height / 2 - size*scaleFactor, width / 2  + diameter/2 + accThreshold*scaleFactor, height / 2 + size*scaleFactor);
+        line(width / 2 - diameter/2 - accThreshold*scaleFactor, height / 2 - size*scaleFactor, width / 2  - diameter/2 - accThreshold*scaleFactor, height / 2 + size*scaleFactor);
+    }
+
+    private void drawGravityCross(float scaleFactor, float diameter) {
+        // gravity cross
+        stroke(128);
+        strokeWeight(2 * scaleFactor);
+        line(width / 2 - diameter / 2, height / 2, width / 2 + diameter / 2, height / 2);
+        line(width / 2, height / 2 - diameter / 2, width / 2, height / 2 + diameter / 2);
+    }
+
+    private boolean checkSyncWithRazor() {
+        // Sync with Razor
+        if (!synched) {
+            textAlign(CENTER);
+            fill(255);
+
+            text("Connecting to Razor...", width / 2, height / 2, -200);
+            if (frameCount == 2) {
+                setupRazor();  // Set ouput params and request synch token
+            } else if (frameCount > 2) {
+                text("...waiting for Sync token", width / 2, height / 2 + 50, -200);
+                synched = readToken(serial, "#SYNCH00\r\n");  // Look for synch token
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void readSerialData(float scaleFactor) {
+        while (serial.available() >= 36) {
+            //Order is: acc x/y/z, mag x/y/z, gyr x/y/z.
+            read(acc, 3);
+            read(mag, 10);
+            read(gyr, 10);
+
+
+            PointXY p = new PointXY(width / 2 + acc[1] * scaleFactor, height / 2 - acc[0] * scaleFactor);
+            trail.addFirst(p);
+            // If trail is too 'long' remove the oldest points
+            while (trail.size() > maxTrailLength)
+                trail.removeLast();
+        }
+    }
+
+    private void drawGravityTrail(float diameter) {
+        if (trail.size() >= 2) {
+            noStroke();
+            for (int i = trail.size() - 1; i > 0; i--) {
+                PointXY currPoint = trail.get(i);
+                float smallDiameter = diameter * ((1f * (trail.size() - i)) / (2f * trail.size()));
+                fill(0, (1f * (trail.size() - i)) / (1f * trail.size()) * 255, 0);
+                ellipse(currPoint.x, currPoint.y, smallDiameter, smallDiameter);
+            }
+            fill(0, 255, 0);
+            ellipse(trail.get(0).x, trail.get(0).y, diameter, diameter);
+        }
+    }
+
+    private void read(float[] val, float smoothing) {
+        val[0] += (readFloat(serial) - val[0]) / smoothing;
+        val[1] += (readFloat(serial) - val[1]) / smoothing;
+        val[2] += (readFloat(serial) - val[2]) / smoothing;
         //smoothedValue += timeSinceLastUpdate * (newValue - smoothedValue) / smoothing
 
     }
@@ -238,16 +300,19 @@ public class GForceDisplay extends PApplet {
                 serial.write("#f");
                 break;
             case 'o':
-                if (maxSpeed<=240)
+                if (maxSpeed <= 240)
                     maxSpeed += 10;
                 break;
             case 'l':
-                if (maxSpeed>=50)
+                if (maxSpeed >= 50)
                     maxSpeed -= 10;
+                break;
+            case 's':
+                maxSpeed = 10;
+                speed = 0;
                 break;
         }
     }
-
 
 
 }
