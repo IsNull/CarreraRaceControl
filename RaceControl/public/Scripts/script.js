@@ -2,11 +2,7 @@ $(document).ready(function () {
 
     var selectedCar;
 
-    $("#controlSelection").hide();
-    $("#orientationControl").hide();
-    $("#sliderControl").hide();
-
-
+    hideComponentsInitially();
     $("#ex4").on("change", function () {
         document.getElementById("text").innerHTML = $(this).value();
     })
@@ -15,17 +11,15 @@ $(document).ready(function () {
         host: 'ws://' + window.location.hostname + ':9000'
     };
 
-    var clientHasCarRegistered = false;
-
-    var connection = new WebSocket(settings.host);
+    var connection = new WebSocket(settings.host);;
 
 
     $("#c1").click(function () {
-        registerGivenCar("C1");
+        tryToConnectToGivenCar("C1")
     });
 
     $("#c2").click(function () {
-        registerGivenCar("C2");
+        tryToConnectToGivenCar("C2")
     });
 
     $("#control1").click(function () {
@@ -74,9 +68,23 @@ $(document).ready(function () {
         }
     }
 
-    function registerGivenCar(givenCar) {
-        selectedCar = givenCar;
-        hideCarSelection();
+    function tryToConnectToGivenCar(givenCar) {
+        connection.onmessage = function (data) {
+            if (data.data.indexOf("fault") !== -1) {
+                console.log("player already set. Will create new WebSocket")
+                connection = new WebSocket(settings.host);
+                $("#playerSetError").show();
+                return false;
+            } else {
+                $("#playerSetError").hide();
+                console.log("player set")
+                //this means the player is already set on another device. On server-side the socket has been closed/rejected
+                selectedCar = givenCar;
+                hideCarSelection();
+                return true;
+            }
+        }
+        connection.send("setPlayer" + givenCar);
     }
 
     function translateSpeed(tiltFB) {
@@ -98,6 +106,13 @@ $(document).ready(function () {
     function hideCarSelection() {
         $("#carSelection").hide();
         $("#controlSelection").show();
+    }
+
+    function hideComponentsInitially() {
+        $("#controlSelection").hide();
+        $("#orientationControl").hide();
+        $("#sliderControl").hide();
+        $("#playerSetError").hide();
     }
 });
 

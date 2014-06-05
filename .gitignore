@@ -1,3 +1,4 @@
 RaceDisplay/.idea/workspace.xml
+node_modules/
+.idea/
 *.class
-RaceControl/node_modules/
