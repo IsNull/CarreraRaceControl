@@ -26,7 +26,7 @@ public class GForceDisplay extends PApplet {
     private final static int SERIAL_PORT_NUM = 0;
 // 4. Try again.
 
-    private static final boolean CONNECT_TO_RACE_CONTROL = false;
+    private static final boolean CONNECT_TO_RACE_CONTROL = true;
     private final static int SERIAL_PORT_BAUD_RATE = 57600;
 
     private PFont font;
@@ -44,6 +44,7 @@ public class GForceDisplay extends PApplet {
     private int accThreshold3 = 30;
     private int speedLevel1 = 150;
     private int speedLevel2 = 120;
+    private float gyrThreshold = 8f;
 
 
     private WebSocket ws;
@@ -154,9 +155,22 @@ public class GForceDisplay extends PApplet {
         strokeWeight(4*scaleFactor);
 
         pushMatrix();
-        translate(width -140*scaleFactor,140*scaleFactor);
-        rotate(radians(gyr[2]/180));
-        line(0, 0, 0, -100*scaleFactor);
+        translate(width - 180 * scaleFactor, 180 * scaleFactor);
+        pushMatrix();
+        strokeWeight(4 * scaleFactor);
+        rotate(radians(gyr[2] / 180f));
+        line(0, 0, 0, -150 * scaleFactor);
+        popMatrix();
+        pushMatrix();
+        strokeWeight(1 * scaleFactor);
+        rotate(radians(-gyrThreshold));
+        line(0, 0, 0, -150 * scaleFactor);
+        popMatrix();
+        pushMatrix();
+        strokeWeight(1*scaleFactor);
+        rotate(radians(gyrThreshold));
+        line(0, 0, 0, -150*scaleFactor);
+        popMatrix();
         popMatrix();
 
     }
@@ -188,9 +202,9 @@ public class GForceDisplay extends PApplet {
     }
 
     private void autoPilot() {
-        //if (abs(gyring[g]-gyring[(g+100-5)%100])>4 && speed > 110) {
-        //    speed = 110;
-        //}else
+        if (abs(gyr[2])/180f > gyrThreshold && speed > speedLevel1) {
+            speed = 110;
+        }else
         if (abs(acc[1]) > accThreshold1 && speed > speedLevel1) {
             speed -= 40;
         } else if (abs(acc[1]) > accThreshold2 && speed > speedLevel2) {
