@@ -2,12 +2,13 @@ package com.zuehlke.race.display;
 
 import processing.core.PApplet;
 import processing.core.PFont;
-import processing.serial.*;
+import processing.serial.Serial;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
+import java.util.LinkedList;
 
 /******************************************************************************************
  * Based on Test Sketch for Razor AHRS v1.4.2
@@ -34,14 +35,15 @@ public class GForceDisplay extends PApplet {
     private float[] acc = new float[3];
     private float[] gyr = new float[3];
     private float[] mag = new float[3];
-    private float[] gyring = new float[100];
-    private int g = 0;
     private short speed = 0;
     private int maxSpeed = 180;
 
-    private static final boolean connect = true;
+    private static final boolean connect = false;
 
     private WebSocket ws;
+
+    LinkedList<PointXY> trail = new LinkedList<>();
+    int maxTrailLength = 60;
 
     public GForceDisplay() {
         try {
@@ -71,6 +73,9 @@ public class GForceDisplay extends PApplet {
     public void setup() {
         // Setup graphics
         size(1024, 768, OPENGL);
+        if (frame != null) {
+            frame.setResizable(true);
+        }
         smooth();
         noStroke();
         frameRate(50);
@@ -118,16 +123,21 @@ public class GForceDisplay extends PApplet {
         background(0);
         lights();
 
+        float scaleFactor = (width/1000);
+
         // Sync with Razor
         if (!synched) {
             textAlign(CENTER);
             fill(255);
-            text("Connecting to Razor...", width/2, height/2, -200);
 
-            if (frameCount == 2)
+            text("Connecting to Razor...", width / 2, height / 2, -200);
+            if (frameCount == 2) {
                 setupRazor();  // Set ouput params and request synch token
-            else if (frameCount > 2)
+            }
+            else if (frameCount > 2) {
+                text("...waiting for Sync token", width / 2, height / 2 + 50, -200);
                 synched = readToken(serial, "#SYNCH00\r\n");  // Look for synch token
+            }
             return;
         }
 
@@ -137,20 +147,29 @@ public class GForceDisplay extends PApplet {
             read(acc,3);
             read(mag,10);
             read(gyr,10);
-            g = (g+1)%100;
-            gyring[g] = gyr[2];
+
+
+            PointXY p = new PointXY(width/2+acc[1]*scaleFactor,height/2-acc[0]*scaleFactor);
+            trail.addFirst(p);
+            // If trail is too 'long' remove the oldest points
+            while (trail.size () > maxTrailLength)
+                trail.removeLast();
         }
 
         // Draw board
         pushMatrix();
-        fill(0,255,0);
-        rect(400,acc[0]>0?400:400-abs(acc[0]),50,50+abs(acc[0]));
-        rect(acc[1]<0?400:400-abs(acc[1]),400,50+abs(acc[1]),50);
+        float diameter = 50*scaleFactor;
 
-        fill(0,0,255);
-        rect(800,gyr[0]>0?400:400-abs(gyr[0]),50,50+abs(gyr[0]));
-        rect(850,gyr[1]>0?400:400-abs(gyr[1]),50,50+abs(gyr[1]));
-        rect(900,gyr[2]>0?        400:400-abs(gyr[2]),50,50+abs(gyr[2]));
+        if (trail.size() >= 2) {
+            for (int i = trail.size()-1; i > 0 ; i--) {
+                PointXY currPoint = trail.get(i);
+                float smallDiameter = diameter*((1f*(trail.size()-i))/(2f*trail.size()));
+                fill(0,(1f*(trail.size()-i))/(1f*trail.size())*255,0);
+                ellipse(currPoint.x,currPoint.y,smallDiameter,smallDiameter);
+            }
+            fill(0,255,0);
+            ellipse(trail.get(0).x,trail.get(0).y,diameter,diameter);
+        }
         popMatrix();
 
 
