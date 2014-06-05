@@ -1,28 +1,26 @@
 # README #
 
 #Installation
-Move to the nodejs-server direectory and type:
+Move to the RaceControl directory and type:
 
-    npm install johnny-five websocket.io
+> npm install
 
-it loads some node-modules and dependencies. After it's finished open the file
+it loads some node-modules and dependencies. 
 
-> socketServer.js
-
-and look for the 
-
-> portName
- 
-variable. Set it to the COMport to which the arduino board is connected. Save and open the file
+Save and open the file
 
 > Scripts/script.js
 
 and replace the IP-Address in 
 `var settings = {	host: 'ws://192.168.174.1:9000'	};` 
 
-with the one the server runs on. Save, make sure you're in the nodejs-server folder and type:
+with the one the server runs on. Save, m
 
-    node server.js
+
+Run the server with: 
+Replace in the following command COMX with the correct COM PORT
+
+> node server.js COMX
 
 This will start the nodejs-server. Wait for the "Initialized" output in the console. After that you're good to go.
 You may now connect with your device with #serverip:8080, where #serverip is the ip you changed previously.
