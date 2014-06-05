@@ -1,7 +1,7 @@
 # README #
 
 #Installation
-Move to the nodejs-server direectory and type:
+Move to the RaceControl directory and type:
 
 > npm install
 
