@@ -1,4 +1,7 @@
+
+
 var socketServer = function () {
+
     var data = null,
         timerID = null,
         sockets = [],
@@ -35,6 +38,8 @@ var socketServer = function () {
                     range: [0, 255]
                 }
             });
+	        // Start the car with initial speed
+            car1.start(45);
         });
     }
 
@@ -171,17 +176,18 @@ var socketServer = function () {
                             } else {
                                 socket.send("fault");
                                 closeSocketAndRemoveFromList(socket);
-                                console.log("Removed socket because the player is already set!".yellow)
+                                console.log("Removed socket because the player is already set!".yellow);
                             }
                         } else {
                             if (data.contains("C1:")) {
-                                var speed = data.split("C1: ")[1];
+                                var speed = parseInt(data.split("C1: ")[1]);
                                 if (globalDebug) {
-                                    console.log("New speed: ".greyBG + speed)
+                                    console.log("Setting speed to car1: '".greyBG + speed + "'");
                                 }
-                                car1.start(speed);
+                                 car1.speed(speed);
+                                 console.log("Speed set without error!");
                             } else if (data.contains("C2:")) {
-                                var speed = data.split("C2: ")[1];
+                                var speed = parseInt(data.split("C2: ")[1]);
                                 if (globalDebug) {
                                     console.log("New speed: ".greyBG + speed)
                                 }
