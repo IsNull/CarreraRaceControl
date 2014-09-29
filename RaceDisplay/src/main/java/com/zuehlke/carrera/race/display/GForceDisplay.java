@@ -31,12 +31,10 @@ public class GForceDisplay extends PApplet {
     private final int SERIAL_PORT_NUM;
 // 4. Try again.
 
-    private final boolean CONNECT_TO_RACE_CONTROL;
     private final static int SERIAL_PORT_BAUD_RATE = 57600;
 
     private PFont font;
     private Serial serial;
-
 
     boolean synched = false;
     private float[] acc = new float[3];
@@ -47,8 +45,6 @@ public class GForceDisplay extends PApplet {
     private int accThreshold1;
     private int accThreshold2;
     private int accThreshold3;
-    private int speedLevel1;
-    private int speedLevel2;
     private float gyrThreshold;
 
 
@@ -58,7 +54,6 @@ public class GForceDisplay extends PApplet {
     public GForceDisplay() throws URISyntaxException {
         println("hello");
         SERIAL_PORT_NUM = Integer.parseInt("0");
-        CONNECT_TO_RACE_CONTROL = Boolean.parseBoolean(System.getProperty("connect","false"));
 
         Properties prop = new Properties();
         InputStream input = null;
@@ -76,7 +71,6 @@ public class GForceDisplay extends PApplet {
             accThreshold1 = Integer.parseInt(prop.getProperty("accThreshold1"));
             accThreshold2 = Integer.parseInt(prop.getProperty("accThreshold2"));
             accThreshold3 = Integer.parseInt(prop.getProperty("accThreshold3"));
-            speedLevel1 = Integer.parseInt(prop.getProperty("speedLevel1"));
             gyrThreshold = Float.parseFloat(prop.getProperty("gyrThreshold"));
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -94,8 +88,6 @@ public class GForceDisplay extends PApplet {
         println("HAVE A LOOK AT THE LIST ABOVE AND SET THE RIGHT SERIAL PORT NUMBER IN THE CODE!");
         println("  -> Using port " + SERIAL_PORT_NUM + ": " + portName);
         serial = new Serial(this, portName, SERIAL_PORT_BAUD_RATE);
-
-
     }
 
 
