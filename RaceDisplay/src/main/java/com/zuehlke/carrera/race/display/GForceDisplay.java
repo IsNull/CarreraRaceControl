@@ -1,15 +1,13 @@
 package com.zuehlke.carrera.race.display;
 
 import com.zuehlke.carrera.model.PointXY;
-import com.zuehlke.carrera.model.WebSocket;
+import com.zuehlke.carrera.model.RazorAPI;
+import com.zuehlke.carrera.model.SensorData;
 import processing.core.PApplet;
 import processing.core.PFont;
-import processing.serial.Serial;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.util.LinkedList;
@@ -24,22 +22,20 @@ import java.util.Properties;
 
 public class GForceDisplay extends PApplet {
 
-    // IF THE SKETCH CRASHES OR HANGS ON STARTUP, MAKE SURE YOU ARE USING THE RIGHT SERIAL PORT:
-// 1. Have a look at the Processing console output of this sketch.
-// 2. Look for the serial port list and find the port you need (it's the same as in Arduino).
-// 3. Set your port number here:
-    private final int SERIAL_PORT_NUM;
-// 4. Try again.
 
-    private final static int SERIAL_PORT_BAUD_RATE = 57600;
+    private static final boolean SHOW_GRAVYTY_TRIAL = true;
+
+    // IF THE SKETCH CRASHES OR HANGS ON STARTUP, MAKE SURE YOU ARE USING THE RIGHT SERIAL PORT:
+    // 1. Have a look at the Processing console output of this sketch.
+    // 2. Look for the serial port list and find the port you need (it's the same as in Arduino).
+    // 3. Set your port number here:
+    // 4. Try again.
+
 
     private PFont font;
-    private Serial serial;
 
     boolean synched = false;
-    private float[] acc = new float[3];
-    private float[] gyr = new float[3];
-    private float[] mag = new float[3];
+
     private int speed = 0;
     private int maxSpeed;
     private int accThreshold1;
@@ -47,13 +43,18 @@ public class GForceDisplay extends PApplet {
     private int accThreshold3;
     private float gyrThreshold;
 
+    private RazorAPI razor = new RazorAPI();
+    private SensorData data = SensorData.Empty;
 
     LinkedList<PointXY> trail = new LinkedList<>();
     int maxTrailLength = 60;
 
+    /**
+     *
+     * @throws URISyntaxException
+     */
     public GForceDisplay() throws URISyntaxException {
         println("hello");
-        SERIAL_PORT_NUM = Integer.parseInt("0");
 
         Properties prop = new Properties();
         InputStream input = null;
@@ -83,28 +84,10 @@ public class GForceDisplay extends PApplet {
                 }
             }
         }
-        String portName = "COM5";
-        println();
-        println("HAVE A LOOK AT THE LIST ABOVE AND SET THE RIGHT SERIAL PORT NUMBER IN THE CODE!");
-        println("  -> Using port " + SERIAL_PORT_NUM + ": " + portName);
-        serial = new Serial(this, portName, SERIAL_PORT_BAUD_RATE);
+
     }
 
 
-    // Skip incoming serial stream data until token is found
-    boolean readToken(Serial serial, String token) {
-        // Wait until enough bytes are available
-        if (serial.available() < token.length())
-            return false;
-
-        // Check if incoming bytes match token
-        for (int i = 0; i < token.length(); i++) {
-            if (serial.read() != token.charAt(i))
-                return false;
-        }
-
-        return true;
-    }
 
     // Global setup
     @Override
@@ -126,24 +109,9 @@ public class GForceDisplay extends PApplet {
         println("AVAILABLE SERIAL PORTS:");
     }
 
-    void setupRazor() {
-        println("Trying to setup and synch Razor...");
 
-        // Set Razor output parameters
-        serial.write("#oscb");  // Turn on binary output
-        serial.write("#o1");  // Turn on continuous streaming output
-        serial.write("#oe0"); // Disable error message output
 
-        // Synch with Razor
-        serial.clear();  // Clear input buffer up to here
-        serial.write("#s00");  // Request synch token
-    }
-
-    float readFloat(Serial s) {
-        // Convert from little endian (Razor) to big endian (Java) and interpret as float
-        return Float.intBitsToFloat(s.read() + (s.read() << 8) + (s.read() << 16) + (s.read() << 24));
-    }
-
+    @Override
     public void draw() {
         // Reset scene
         background(0);
@@ -161,11 +129,60 @@ public class GForceDisplay extends PApplet {
         drawGravityThreshold(accThreshold2, scaleFactor, diameter);
         drawGravityThreshold(accThreshold3, scaleFactor, diameter);
 
-        drawSpeedoMeter(scaleFactor);
+        //drawSpeedoMeter(scaleFactor);
         drawGyro(scaleFactor);
 
         drawTextualData();
     }
+
+    private PointXY latestAcc = new PointXY(0,0);
+
+    private void readSerialData(float scaleFactor) {
+
+        data = razor.readSensorData();
+
+
+        PointXY p = new PointXY(width / 2 + data.getAcc()[1] * scaleFactor, height / 2 - data.getAcc()[0] * scaleFactor);
+        trail.addFirst(p);
+        // If trail is too 'long' remove the oldest points
+        while (trail.size() > maxTrailLength)
+            trail.removeLast();
+        latestAcc = p;
+    }
+
+
+
+    @Override
+    public void keyPressed() {
+        switch (key) {
+            case '0':  // Turn Razor's continuous output stream off
+                razor.disableContinousOutput();
+                println("Turn Razor's continuous output stream off");
+                break;
+            case '1':  // Turn Razor's continuous output stream on
+                razor.enableContinousOutput();
+                println("Turn Razor's continuous output stream on");
+                break;
+            case 'f':
+                razor.requestSinglePitch();
+                break;
+            case 'o':
+                if (maxSpeed <= 240)
+                    maxSpeed += 10;
+                break;
+            case 'l':
+                if (maxSpeed >= 50)
+                    maxSpeed -= 10;
+                break;
+            case 's':
+                maxSpeed = 10;
+                speed = 0;
+                break;
+        }
+    }
+
+
+
 
     private void drawGyro(float scaleFactor) {
         stroke(255);
@@ -176,7 +193,7 @@ public class GForceDisplay extends PApplet {
         translate(width - 180 * scaleFactor, 180 * scaleFactor);
         pushMatrix();
         strokeWeight(4 * scaleFactor);
-        rotate(radians(gyr[2] / 180f));
+        rotate(radians(data.getGyr()[2] / 180f));
         line(0, 0, 0, -150 * scaleFactor);
         popMatrix();
         pushMatrix();
@@ -213,9 +230,9 @@ public class GForceDisplay extends PApplet {
         text("Max Speed: " + maxSpeed, 0, -80);
         text("Speed: " + speed, 0, -60);
         DecimalFormat format = new DecimalFormat("####.00");
-        text("Acc: " + format.format(acc[0]) + " -- " + format.format(acc[1]) + " -- " + format.format(acc[2]), 0, 0);
-        text("Mag: " + format.format(mag[0]) + " -- " + format.format(mag[1]) + " -- " + format.format(mag[2]), 0, -20);
-        text("Gyr: " + format.format(gyr[0]) + " -- " + format.format(gyr[1]) + " -- " + format.format(gyr[2]), 0, -40);
+        text("Acc: " + format.format(data.getAcc()[0]) + " -- " + format.format(data.getAcc()[1]) + " -- " + format.format(data.getAcc()[2]), 0, 0);
+        text("Mag: " + format.format(data.getMag()[0]) + " -- " + format.format(data.getMag()[1]) + " -- " + format.format(data.getMag()[2]), 0, -20);
+        text("Gyr: " + format.format(data.getGyr()[0]) + " -- " + format.format(data.getGyr()[1]) + " -- " + format.format(data.getGyr()[2]), 0, -40);
         popMatrix();
     }
 
@@ -245,79 +262,36 @@ public class GForceDisplay extends PApplet {
 
             text("Connecting to Razor...", width / 2, height / 2, -200);
             if (frameCount == 2) {
-                setupRazor();  // Set ouput params and request synch token
+                razor.setupRazor();  // Set ouput params and request synch token
             } else if (frameCount > 2) {
                 text("...waiting for Sync token", width / 2, height / 2 + 50, -200);
-                synched = readToken(serial, "#SYNCH00\r\n");  // Look for synch token
+                synched = razor.syncToken();  // Look for synch token
             }
             return true;
         }
         return false;
     }
 
-    private void readSerialData(float scaleFactor) {
-        while (serial.available() >= 36) {
-            //Order is: acc x/y/z, mag x/y/z, gyr x/y/z.
-            read(acc, 3);
-            read(mag, 10);
-            read(gyr, 10);
-
-
-            PointXY p = new PointXY(width / 2 + acc[1] * scaleFactor, height / 2 - acc[0] * scaleFactor);
-            trail.addFirst(p);
-            // If trail is too 'long' remove the oldest points
-            while (trail.size() > maxTrailLength)
-                trail.removeLast();
-        }
-    }
 
     private void drawGravityTrail(float diameter) {
-        if (trail.size() >= 2) {
-            noStroke();
-            for (int i = trail.size() - 1; i > 0; i--) {
-                PointXY currPoint = trail.get(i);
-                float smallDiameter = diameter * ((1f * (trail.size() - i)) / (2f * trail.size()));
-                fill(0, (1f * (trail.size() - i)) / (1f * trail.size()) * 255, 0);
-                ellipse(currPoint.x, currPoint.y, smallDiameter, smallDiameter);
+
+        if(SHOW_GRAVYTY_TRIAL){
+            // Draw some of the previous points and fade em out
+            if (trail.size() >= 2) {
+                noStroke();
+                for (int i = trail.size() - 1; i > 0; i--) {
+                    PointXY currPoint = trail.get(i);
+                    float smallDiameter = diameter * ((1f * (trail.size() - i)) / (2f * trail.size()));
+                    fill(0, (1f * (trail.size() - i)) / (1f * trail.size()) * 255, 0);
+                    ellipse(currPoint.x, currPoint.y, smallDiameter, smallDiameter);
+                }
             }
-            fill(0, 255, 0);
-            ellipse(trail.get(0).x, trail.get(0).y, diameter, diameter);
         }
-    }
 
-    private void read(float[] val, float smoothing) {
-        val[0] += (readFloat(serial) - val[0]) / smoothing;
-        val[1] += (readFloat(serial) - val[1]) / smoothing;
-        val[2] += (readFloat(serial) - val[2]) / smoothing;
-        //smoothedValue += timeSinceLastUpdate * (newValue - smoothedValue) / smoothing
-
-    }
-
-    public void keyPressed() {
-        switch (key) {
-            case '0':  // Turn Razor's continuous output stream off
-                serial.write("#o0");
-                println("Turn Razor's continuous output stream off");
-                break;
-            case '1':  // Turn Razor's continuous output stream on
-                serial.write("#o1");
-                println("Turn Razor's continuous output stream on");
-                break;
-            case 'f':  // Request one single yaw/pitch/roll frame from Razor (use when continuous streaming is off)
-                serial.write("#f");
-                break;
-            case 'o':
-                if (maxSpeed <= 240)
-                    maxSpeed += 10;
-                break;
-            case 'l':
-                if (maxSpeed >= 50)
-                    maxSpeed -= 10;
-                break;
-            case 's':
-                maxSpeed = 10;
-                speed = 0;
-                break;
+        if(latestAcc != null){
+            noStroke();
+            fill(0, 255, 0);
+            ellipse(latestAcc.x, latestAcc.y, diameter, diameter);
         }
     }
 
