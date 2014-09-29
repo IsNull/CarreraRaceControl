@@ -57,7 +57,7 @@ public class GForceDisplay extends PApplet {
 
     public GForceDisplay() throws URISyntaxException {
         println("hello");
-        SERIAL_PORT_NUM = Integer.parseInt(System.getProperty("portNr","0"));
+        SERIAL_PORT_NUM = Integer.parseInt("0");
         CONNECT_TO_RACE_CONTROL = Boolean.parseBoolean(System.getProperty("connect","false"));
         ws = new WebSocket(new URI(System.getProperty("url","ws://127.0.0.1:9000")));
 
@@ -85,6 +85,13 @@ public class GForceDisplay extends PApplet {
                 }
             }
         }
+        String portName = "COM5";
+        println();
+        println("HAVE A LOOK AT THE LIST ABOVE AND SET THE RIGHT SERIAL PORT NUMBER IN THE CODE!");
+        println("  -> Using port " + SERIAL_PORT_NUM + ": " + portName);
+        serial = new Serial(this, portName, SERIAL_PORT_BAUD_RATE);
+
+
     }
 
 
@@ -104,6 +111,7 @@ public class GForceDisplay extends PApplet {
     }
 
     // Global setup
+    @Override
     public void setup() {
         // Setup graphics
         size(1024, 768, OPENGL);
@@ -120,12 +128,6 @@ public class GForceDisplay extends PApplet {
 
         // Setup serial port I/O
         println("AVAILABLE SERIAL PORTS:");
-        println(Serial.list());
-        String portName = Serial.list()[SERIAL_PORT_NUM];
-        println();
-        println("HAVE A LOOK AT THE LIST ABOVE AND SET THE RIGHT SERIAL PORT NUMBER IN THE CODE!");
-        println("  -> Using port " + SERIAL_PORT_NUM + ": " + portName);
-        serial = new Serial(this, portName, SERIAL_PORT_BAUD_RATE);
 
         try {
             if (CONNECT_TO_RACE_CONTROL) ws.connect();

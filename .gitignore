@@ -2,3 +2,4 @@ RaceDisplay/.idea/workspace.xml
 node_modules/
 .idea/
 *.class
+*.log

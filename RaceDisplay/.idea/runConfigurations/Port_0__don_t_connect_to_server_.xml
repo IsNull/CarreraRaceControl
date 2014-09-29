@@ -12,6 +12,8 @@
     <option name="PASS_PARENT_ENVS" value="true" />
     <module name="RaceDisplay" />
     <envs />
+    <RunnerSettings RunnerId="Run" />
+    <ConfigurationWrapper RunnerId="Run" />
     <method />
   </configuration>
 </component>
