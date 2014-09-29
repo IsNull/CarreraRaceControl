@@ -52,8 +52,6 @@ public class GForceDisplay extends PApplet {
     private float gyrThreshold;
 
 
-    private WebSocket ws;
-
     LinkedList<PointXY> trail = new LinkedList<>();
     int maxTrailLength = 60;
 
@@ -61,7 +59,6 @@ public class GForceDisplay extends PApplet {
         println("hello");
         SERIAL_PORT_NUM = Integer.parseInt("0");
         CONNECT_TO_RACE_CONTROL = Boolean.parseBoolean(System.getProperty("connect","false"));
-        ws = new WebSocket(new URI(System.getProperty("url","ws://127.0.0.1:9000")));
 
         Properties prop = new Properties();
         InputStream input = null;
@@ -135,12 +132,6 @@ public class GForceDisplay extends PApplet {
 
         // Setup serial port I/O
         println("AVAILABLE SERIAL PORTS:");
-
-        try {
-            if (CONNECT_TO_RACE_CONTROL) ws.connect();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     void setupRazor() {
@@ -171,7 +162,6 @@ public class GForceDisplay extends PApplet {
         float diameter = 50 * scaleFactor;
 
         readSerialData(scaleFactor);
-        autoPilot();
 
         drawGravityTrail(diameter);
         drawGravityCross(scaleFactor, diameter);
@@ -237,31 +227,6 @@ public class GForceDisplay extends PApplet {
         popMatrix();
     }
 
-    private void autoPilot() {
-        if (abs(gyr[2])/180f > gyrThreshold && speed > speedLevel1) {
-            speed = 110;
-        }else
-        if (abs(acc[1]) > accThreshold1 && speed > speedLevel1) {
-            speed -= 40;
-        } else if (abs(acc[1]) > accThreshold2 && speed > speedLevel2) {
-            speed -= 10;
-        } else if (abs(acc[1]) <= accThreshold3) {
-            speed += 10;
-            if (speed > maxSpeed)
-                speed = maxSpeed;
-        }
-
-        try {
-            if (CONNECT_TO_RACE_CONTROL) ws.send("C1: " + speed);
-        } catch (IOException e) {
-            if (CONNECT_TO_RACE_CONTROL) try {
-                ws.connect();
-            } catch (IOException e1) {
-                throw new RuntimeException(e1);
-            }
-            e.printStackTrace();
-        }
-    }
 
     private void drawGravityThreshold(float accThreshold, float scaleFactor, float diameter) {
         // gravity border
