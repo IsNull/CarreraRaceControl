@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Connect Localhost Port 0" type="Application" factoryName="Application" singleton="true">
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-    <option name="MAIN_CLASS_NAME" value="com.zuehlke.race.display.Main" />
+    <option name="MAIN_CLASS_NAME" value="com.zuehlke.carrera.SensorDisplayApp" />
     <option name="VM_PARAMETERS" value="-DportNr=0 -Dconnect=true -Durl=&quot;ws://127.0.0.1:9000&quot;" />
     <option name="PROGRAM_PARAMETERS" value="" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />

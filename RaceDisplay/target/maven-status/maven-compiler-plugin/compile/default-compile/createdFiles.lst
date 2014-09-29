@@ -1,0 +1,5 @@
+com\zuehlke\carrera\race\display\GForceDisplay.class
+com\zuehlke\carrera\model\PointXY.class
+com\zuehlke\carrera\console\RaceConsole.class
+com\zuehlke\carrera\SensorDisplayApp.class
+com\zuehlke\carrera\model\WebSocket.class
