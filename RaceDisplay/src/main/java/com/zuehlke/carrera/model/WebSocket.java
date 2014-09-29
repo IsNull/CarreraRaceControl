@@ -28,6 +28,7 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.net.Socket;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -52,7 +53,13 @@ public class WebSocket {
 	
 	/** The external headers. */
 	private HashMap<String, String> mHeaders; 
-	
+
+
+
+    public WebSocket(String url) throws URISyntaxException {
+        this(new URI(url));
+    }
+
 	/**
 	 * Creates a new WebSocket targeting the specified URL.
 	 * @param url The URL for the socket.
@@ -145,6 +152,14 @@ public class WebSocket {
 		
 		mHandshakeComplete = true;
 	}
+
+    /**
+     * Is this WebSocket currently connected?
+     * @return
+     */
+    public boolean isConnected(){
+        return mHandshakeComplete && getSocket() != null && getSocket().isConnected();
+    }
 	
 	private Socket createSocket() throws java.io.IOException {
 		String scheme = mUrl.getScheme();
@@ -231,6 +246,7 @@ public class WebSocket {
 		mInput.close();
 		mOutput.close();
 		mSocket.close();
+        mHandshakeComplete = false;
 	}
 	
 	/**

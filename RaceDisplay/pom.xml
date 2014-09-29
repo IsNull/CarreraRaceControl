@@ -24,16 +24,20 @@
 
     <dependencies>
 
+        <!-- Spring -->
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>4.1.0.RELEASE</version>
+        </dependency>
+
+        <!-- JUnit -->
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.11</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.scream3r</groupId>
-            <artifactId>jssc</artifactId>
-            <version>2.8.0</version>
         </dependency>
 
         <!-- JOGL - OPEN GL Wrapper for Java -->
@@ -50,15 +54,17 @@
         </dependency>
 
 
+        <!-- =========== LOCAL  START ============= -->
+
         <!-- These are local maven dependencies
-        Install them yourself if you setup a new development machine with:
+            Install them yourself if you setup a new development machine with:
 
-        From the right directory, where processing is located:
+            From the right directory, where processing is located:
 
-        mvn install:install-file -Dfile=core.jar -DgroupId=processing -DartifactId=core -Dversion=2.2.1 -Dpackaging=jar
-        mvn install:install-file -Dfile=serial.jar -DgroupId=processing -DartifactId=serial -Dversion=2.2.1 -Dpackaging=jar
+            mvn install:install-file -Dfile=core.jar -DgroupId=processing -DartifactId=core -Dversion=2.2.1 -Dpackaging=jar
+            mvn install:install-file -Dfile=serial.jar -DgroupId=processing -DartifactId=serial -Dversion=2.2.1 -Dpackaging=jar
 
-        -->
+            -->
 
         <dependency>
             <groupId>processing</groupId>
@@ -66,11 +72,23 @@
             <version>2.2.1</version>
         </dependency>
 
+
         <dependency>
             <groupId>processing</groupId>
             <artifactId>serial</artifactId>
             <version>2.2.1</version>
         </dependency>
+
+        <!-- =========== LOCAL  END ============= -->
+
+        <!-- -->
+
+        <dependency>
+            <groupId>org.scream3r</groupId>
+            <artifactId>jssc</artifactId>
+            <version>2.8.0</version>
+        </dependency>
+
 
     </dependencies>
 
