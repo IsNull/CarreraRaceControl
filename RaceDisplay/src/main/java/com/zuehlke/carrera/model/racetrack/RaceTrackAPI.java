@@ -28,6 +28,10 @@ public class RaceTrackAPI {
         if(!wsSpeedControl.isConnected()){
             System.out.println("Can not send speed-control since we are not connected. Reconnecting...");
             connectSpeedControl(); // Reconnect?
+
+            if(!wsSpeedControl.isConnected()){
+                System.out.println("Reconnect failed. Discarding car speed.");
+            }
         }
 
         String cmd = speed + "";

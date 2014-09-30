@@ -35,6 +35,7 @@ public class RaceConsole {
                 System.out.println(e.getMessage());
             }
         }
+        raceTrackAPI.setCarSpeed(0);
         raceTrackAPI.disconnectSpeedControl();
         System.out.println("Race-Console has been ended.");
 
