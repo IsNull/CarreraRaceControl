@@ -1,9 +1,10 @@
 package com.zuehlke.carrera;
 
 import com.zuehlke.carrera.model.RazorAPI;
-import com.zuehlke.carrera.model.SensorData;
+import com.zuehlke.carrera.model.SensorEvent;
 import com.zuehlke.carrera.model.SpeedControl;
 import com.zuehlke.carrera.model.racetrack.RaceTrackAPI;
+import org.glassfish.jersey.filter.LoggingFilter;
 import org.glassfish.jersey.jackson.JacksonFeature;
 
 
@@ -12,7 +13,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -24,7 +24,7 @@ public class CarreraRaceTrackApp {
     public static void main(String[] args) {
         new CarreraRaceTrackApp();
     }
-
+    // http://zrhn1772:8080/ws/rest/raceTrack/sensor
     private static final String backendUrl = "http://zrhn1772:8080/ws/rest/raceTrack";
 
     private final RazorAPI razor;
@@ -32,12 +32,11 @@ public class CarreraRaceTrackApp {
     private Timer speedPoller;
     private Timer sensorPusher;
 
-    Client client = ClientBuilder.newClient().register(JacksonFeature.class);
+    Client client = ClientBuilder.newClient()
+            .register(JacksonFeature.class);
+            //.register(LoggingFilter.class);
 
     public CarreraRaceTrackApp(){
-
-
-
 
         razor = new RazorAPI();
         raceTrack = new RaceTrackAPI();
@@ -54,7 +53,7 @@ public class CarreraRaceTrackApp {
         speedPoller.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                pollSpeedControl();
+               pollSpeedControl();
             }
         }, 0, 100);
 
@@ -67,24 +66,37 @@ public class CarreraRaceTrackApp {
     }
 
     private void pollSpeedControl(){
-        SpeedControl speedControl =
-                client.target(backendUrl + "/speed")
-                        .request(MediaType.APPLICATION_JSON)
-                        .get(SpeedControl.class);
+        try {
+            SpeedControl speedControl =
+                    client.target(backendUrl + "/speed")
+                            .request(MediaType.APPLICATION_JSON)
+                            .get(SpeedControl.class);
 
-        if(speedControl != null){
-            int speed = (int)Math.floor( speedControl.getPower() );
-            raceTrack.setCarSpeed(speed);
+            if (speedControl != null) {
+                int speed = (int) Math.floor(speedControl.getPower());
+                raceTrack.setCarSpeed(speed);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 
-    private void pushSensorData(){
-        SensorData data = razor.readSensorData();
+    private void pushSensorData() {
+        try {
+            SensorEvent data = razor.readSensorData();
 
-        Response response =
-                client.target(backendUrl + "/sensor")
-                        .request(MediaType.TEXT_PLAIN)
-                        .post(Entity.entity(data, MediaType.APPLICATION_JSON), Response.class);
+            System.out.println("Got sensor Data: " + data);
+
+            Response response =
+                    client.target(backendUrl + "/sensor")
+                            .request(MediaType.APPLICATION_JSON)
+                            .post(Entity.json(data), Response.class);
+            if (response.getStatus() >= 400) {
+                // HTTP ERROR
+                System.err.println("POSTING SENESOR DATA FAILED : " + response.getStatus() + "(" + response.getStatusInfo() + ")");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-
 }

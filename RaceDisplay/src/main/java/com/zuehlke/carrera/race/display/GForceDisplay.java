@@ -2,7 +2,7 @@ package com.zuehlke.carrera.race.display;
 
 import com.zuehlke.carrera.model.PointXY;
 import com.zuehlke.carrera.model.RazorAPI;
-import com.zuehlke.carrera.model.SensorData;
+import com.zuehlke.carrera.model.SensorEvent;
 import processing.core.PApplet;
 import processing.core.PFont;
 
@@ -31,23 +31,25 @@ public class GForceDisplay extends PApplet {
     // 3. Set your port number here:
     // 4. Try again.
 
+    private final RazorAPI razor = new RazorAPI();
+
 
     private PFont font;
 
     boolean synched = false;
 
-    private int speed = 0;
-    private int maxSpeed;
     private int accThreshold1;
     private int accThreshold2;
     private int accThreshold3;
     private float gyrThreshold;
 
-    private RazorAPI razor = new RazorAPI();
-    private SensorData data = SensorData.Empty;
+    private SensorEvent data = SensorEvent.Empty;
 
-    LinkedList<PointXY> trail = new LinkedList<>();
-    int maxTrailLength = 60;
+    private final LinkedList<PointXY> trailAcc = new LinkedList<>();
+    private static final int maxTrailLength = 60;
+    private PointXY latestAcc = new PointXY(0,0);
+
+
 
     /**
      *
@@ -68,7 +70,6 @@ public class GForceDisplay extends PApplet {
             input = getClass().getResourceAsStream(propertyPath); //new FileInputStream(propertyPath);
             // get the property value and print it out
             prop.load(input);
-            maxSpeed = Integer.parseInt(prop.getProperty("maxSpeed"));
             accThreshold1 = Integer.parseInt(prop.getProperty("accThreshold1"));
             accThreshold2 = Integer.parseInt(prop.getProperty("accThreshold2"));
             accThreshold3 = Integer.parseInt(prop.getProperty("accThreshold3"));
@@ -135,7 +136,6 @@ public class GForceDisplay extends PApplet {
         drawTextualData();
     }
 
-    private PointXY latestAcc = new PointXY(0,0);
 
     private void readSerialData(float scaleFactor) {
 
@@ -143,10 +143,10 @@ public class GForceDisplay extends PApplet {
 
 
         PointXY p = new PointXY(width / 2 + data.getAcc()[1] * scaleFactor, height / 2 - data.getAcc()[0] * scaleFactor);
-        trail.addFirst(p);
-        // If trail is too 'long' remove the oldest points
-        while (trail.size() > maxTrailLength)
-            trail.removeLast();
+        trailAcc.addFirst(p);
+        // If trailAcc is too 'long' remove the oldest points
+        while (trailAcc.size() > maxTrailLength)
+            trailAcc.removeLast();
         latestAcc = p;
     }
 
@@ -166,18 +166,6 @@ public class GForceDisplay extends PApplet {
             case 'f':
                 razor.requestSinglePitch();
                 break;
-            case 'o':
-                if (maxSpeed <= 240)
-                    maxSpeed += 10;
-                break;
-            case 'l':
-                if (maxSpeed >= 50)
-                    maxSpeed -= 10;
-                break;
-            case 's':
-                maxSpeed = 10;
-                speed = 0;
-                break;
         }
     }
 
@@ -193,7 +181,11 @@ public class GForceDisplay extends PApplet {
         translate(width - 180 * scaleFactor, 180 * scaleFactor);
         pushMatrix();
         strokeWeight(4 * scaleFactor);
-        rotate(radians(data.getGyr()[2] / 180f));
+
+        float gyroZ =  data.getGyr()[2];
+        float gyroVal = (gyroZ+100) / 180f * 10;
+
+        rotate(radians(gyroVal));
         line(0, 0, 0, -150 * scaleFactor);
         popMatrix();
         pushMatrix();
@@ -210,14 +202,6 @@ public class GForceDisplay extends PApplet {
 
     }
 
-    private void drawSpeedoMeter(float scaleFactor) {
-        stroke(255);
-        fill(50);
-        rect(scaleFactor*5,scaleFactor*5,50*scaleFactor,400*scaleFactor,5*scaleFactor);
-        fill(200,50,0);
-        rect(scaleFactor*5,scaleFactor*5+(1f-speed/255f)*(400*scaleFactor),50*scaleFactor,(speed/255f)*(400*scaleFactor),0,0,5*scaleFactor,5*scaleFactor);
-    }
-
     private void drawTextualData() {
         textFont(font, 20);
         fill(255);
@@ -227,8 +211,6 @@ public class GForceDisplay extends PApplet {
         pushMatrix();
         translate(10, height - 10);
         textAlign(LEFT);
-        text("Max Speed: " + maxSpeed, 0, -80);
-        text("Speed: " + speed, 0, -60);
         DecimalFormat format = new DecimalFormat("####.00");
         text("Acc: " + format.format(data.getAcc()[0]) + " -- " + format.format(data.getAcc()[1]) + " -- " + format.format(data.getAcc()[2]), 0, 0);
         text("Mag: " + format.format(data.getMag()[0]) + " -- " + format.format(data.getMag()[1]) + " -- " + format.format(data.getMag()[2]), 0, -20);
@@ -277,12 +259,12 @@ public class GForceDisplay extends PApplet {
 
         if(SHOW_GRAVYTY_TRIAL){
             // Draw some of the previous points and fade em out
-            if (trail.size() >= 2) {
+            if (trailAcc.size() >= 2) {
                 noStroke();
-                for (int i = trail.size() - 1; i > 0; i--) {
-                    PointXY currPoint = trail.get(i);
-                    float smallDiameter = diameter * ((1f * (trail.size() - i)) / (2f * trail.size()));
-                    fill(0, (1f * (trail.size() - i)) / (1f * trail.size()) * 255, 0);
+                for (int i = trailAcc.size() - 1; i > 0; i--) {
+                    PointXY currPoint = trailAcc.get(i);
+                    float smallDiameter = diameter * ((1f * (trailAcc.size() - i)) / (2f * trailAcc.size()));
+                    fill(0, (1f * (trailAcc.size() - i)) / (1f * trailAcc.size()) * 255, 0);
                     ellipse(currPoint.x, currPoint.y, smallDiameter, smallDiameter);
                 }
             }

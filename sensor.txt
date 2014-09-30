@@ -3,6 +3,8 @@ package com.zuehlke.carrera.model;
 import java.util.Arrays;
 
 /**
+ * Immutable (almost) implementation of sensor data.
+ *
  * Created by paba on 29.09.2014.
  */
 public class SensorData {

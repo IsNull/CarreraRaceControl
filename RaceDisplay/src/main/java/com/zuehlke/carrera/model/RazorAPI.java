@@ -3,6 +3,8 @@ package com.zuehlke.carrera.model;
 import processing.core.PApplet;
 import processing.serial.Serial;
 
+import java.util.Date;
+
 /**
  * Created by paba on 29.09.2014.
  */
@@ -80,9 +82,9 @@ public class RazorAPI {
         return true;
     }
 
-    public SensorData readSensorData(){
+    public SensorEvent readSensorData(){
         readSerialData();
-        return new SensorData( acc, mag, gyr );
+        return new SensorEvent( acc, mag, gyr, new Date().getTime() );
     }
 
     private void readSerialData() {
