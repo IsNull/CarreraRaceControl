@@ -4,9 +4,7 @@ import com.zuehlke.carrera.model.RazorAPI;
 import com.zuehlke.carrera.model.SensorEvent;
 import com.zuehlke.carrera.model.SpeedControl;
 import com.zuehlke.carrera.model.racetrack.RaceTrackAPI;
-import org.glassfish.jersey.filter.LoggingFilter;
 import org.glassfish.jersey.jackson.JacksonFeature;
-
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -17,7 +15,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * Created by wgiersche on 29.09.2014.
+ * Connects to the Backend-Server and allows the race track to be
+ * remote controlled.
  */
 public class CarreraRaceTrackApp {
 
@@ -25,7 +24,10 @@ public class CarreraRaceTrackApp {
         new CarreraRaceTrackApp();
     }
     // http://zrhn1772:8080/ws/rest/raceTrack/sensor
-    private static final String backendUrl = "http://zrhn1772:8080/ws/rest/raceTrack";
+    private static final String backendUrl = "http://zrhn1772:8080/ws/rest/relay";
+
+    private static final long sensorDataInterval = 50;
+    private static final long speedControlInterval = 50;
 
     private final RazorAPI razor;
     private final RaceTrackAPI raceTrack;
@@ -34,7 +36,7 @@ public class CarreraRaceTrackApp {
 
     Client client = ClientBuilder.newClient()
             .register(JacksonFeature.class);
-            //.register(LoggingFilter.class);
+            //.register(LoggingFilter.class); // Un-comment this to log REST request/response content
 
     public CarreraRaceTrackApp(){
 
@@ -55,17 +57,19 @@ public class CarreraRaceTrackApp {
             public void run() {
                pollSpeedControl();
             }
-        }, 0, 100);
+        }, 0, speedControlInterval);
 
         sensorPusher.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 pushSensorData();
             }
-        }, 0, 100);
+        }, 0, sensorDataInterval);
     }
 
     private void pollSpeedControl(){
+
+        int speed = 0;
         try {
             SpeedControl speedControl =
                     client.target(backendUrl + "/speed")
@@ -73,19 +77,19 @@ public class CarreraRaceTrackApp {
                             .get(SpeedControl.class);
 
             if (speedControl != null) {
-                int speed = (int) Math.floor(speedControl.getPower());
-                raceTrack.setCarSpeed(speed);
+                speed = (int) Math.floor(speedControl.getPower());
             }
         }catch (Exception e){
             e.printStackTrace();
         }
+        raceTrack.setCarSpeed(speed);
     }
 
     private void pushSensorData() {
         try {
             SensorEvent data = razor.readSensorData();
 
-            System.out.println("Got sensor Data: " + data);
+            //System.out.println("Got sensor Data: " + data);
 
             Response response =
                     client.target(backendUrl + "/sensor")

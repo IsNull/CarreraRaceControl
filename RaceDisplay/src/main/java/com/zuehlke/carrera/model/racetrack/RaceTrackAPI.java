@@ -36,7 +36,7 @@ public class RaceTrackAPI {
 
         String cmd = speed + "";
         String command = "C1: " + cmd;
-        System.out.println("Sending '" + command + "' to race control!");
+        //System.out.println("Sending '" + command + "' to race control!");
         try {
             wsSpeedControl.send(command);
         } catch (IOException e) {

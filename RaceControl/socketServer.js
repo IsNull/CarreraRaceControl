@@ -185,7 +185,7 @@ var socketServer = function () {
                                     console.log("Setting speed to car1: '".greyBG + speed + "'");
                                 }
                                  car1.speed(speed);
-                                 console.log("Speed set without error!");
+                                 //console.log("Speed set without error!");
                             } else if (data.contains("C2:")) {
                                 var speed = parseInt(data.split("C2: ")[1]);
                                 if (globalDebug) {
