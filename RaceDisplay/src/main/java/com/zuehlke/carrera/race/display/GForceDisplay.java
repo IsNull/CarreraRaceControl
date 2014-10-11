@@ -31,7 +31,7 @@ public class GForceDisplay extends PApplet {
     // 3. Set your port number here:
     // 4. Try again.
 
-    private final RazorAPI razor = new RazorAPI();
+    private final RazorAPI razor = new RazorAPI("COM5");
 
 
     private PFont font;

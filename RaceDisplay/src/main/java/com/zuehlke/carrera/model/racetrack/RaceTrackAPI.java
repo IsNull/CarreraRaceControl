@@ -13,7 +13,7 @@ import java.net.URISyntaxException;
  */
 public class RaceTrackAPI {
 
-    private String speedControlURL = "ws://127.0.0.1:9000";
+    private String speedControlURL = "ws://127.0.0.1:9001";
     private WebSocket wsSpeedControl = null;
 
     public RaceTrackAPI(){

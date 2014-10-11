@@ -8,6 +8,7 @@ public class SpeedControl {
     private String accessCode;
     private String teamId;
     private double power;
+    private long timeStamp;
 
     public String getAccessCode() {
         return accessCode;
@@ -31,5 +32,14 @@ public class SpeedControl {
 
     public void setPower(double power) {
         this.power = power;
+    }
+
+
+    public long getTimeStamp() {
+        return timeStamp;
+    }
+
+    public void setTimeStamp(long timeStamp) {
+        this.timeStamp = timeStamp;
     }
 }

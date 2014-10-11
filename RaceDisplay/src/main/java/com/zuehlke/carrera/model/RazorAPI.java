@@ -22,8 +22,7 @@ public class RazorAPI {
 
 
 
-    public RazorAPI(){
-        String portName = "COM5";
+    public RazorAPI(String portName){
         serial = new Serial(new PApplet(){}, portName, SERIAL_PORT_BAUD_RATE);
     }
 

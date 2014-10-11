@@ -24,10 +24,14 @@ public class CarreraRaceTrackApp {
         new CarreraRaceTrackApp();
     }
     // http://zrhn1772:8080/ws/rest/raceTrack/sensor
-    private static final String backendUrl = "http://zrhn1772:8080/ws/rest/relay";
+    private static final String backendUrl = "http://localhost:8080/ws/rest/relay";
 
-    private static final long sensorDataInterval = 50;
-    private static final long speedControlInterval = 50;
+    //private static final String microRelayURL = "http://192.168.1.79:8080/relay";
+    //private static final String backendUrl = "http://relay2.beta.swisscloud.io/ws/rest/relay";
+    // ping test http://zrhn1772:8080/ws/rest/myBot/ping
+
+    private static final long sensorDataInterval = 20;
+    private static final long speedControlInterval = 20;
 
     private final RazorAPI razor;
     private final RaceTrackAPI raceTrack;
@@ -40,7 +44,7 @@ public class CarreraRaceTrackApp {
 
     public CarreraRaceTrackApp(){
 
-        razor = new RazorAPI();
+        razor = new RazorAPI("COM5");
         raceTrack = new RaceTrackAPI();
 
         System.out.println("Starting periodic poling...");
@@ -78,6 +82,7 @@ public class CarreraRaceTrackApp {
 
             if (speedControl != null) {
                 speed = (int) Math.floor(speedControl.getPower());
+                //System.out.println("Racetrack setting speed to: " + speed);
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -85,19 +90,23 @@ public class CarreraRaceTrackApp {
         raceTrack.setCarSpeed(speed);
     }
 
+    private long MAX_LATENCY = 10;
+    private long timecheck = 0;
+
     private void pushSensorData() {
         try {
             SensorEvent data = razor.readSensorData();
 
             //System.out.println("Got sensor Data: " + data);
-
             Response response =
                     client.target(backendUrl + "/sensor")
                             .request(MediaType.APPLICATION_JSON)
                             .post(Entity.json(data), Response.class);
+
+            //System.out.println("" + data.getTimeStamp() + " - " + data.getAcc()[1]);
             if (response.getStatus() >= 400) {
                 // HTTP ERROR
-                System.err.println("POSTING SENESOR DATA FAILED : " + response.getStatus() + "(" + response.getStatusInfo() + ")");
+                System.err.println("POSTING SENSOR DATA FAILED : " + response.getStatus() + "(" + response.getStatusInfo() + ")");
             }
         } catch (Exception e) {
             e.printStackTrace();
